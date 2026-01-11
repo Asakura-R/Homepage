@@ -4,13 +4,19 @@ import NavigationCards from '@components/NavigationCards.astro';
 import PageTitle from '@components/PageTitle.astro';
 import { getArticles, getCategories, formatDate } from '@lib/microcms';
 
+// ページ番号を取得
+const currentPage = Number(Astro.url.searchParams.get('page')) || 1;
+const perPage = 10;
+
 // microCMSからデータ取得
 const [articlesData, categories] = await Promise.all([
-  getArticles({ limit: 10 }),
+  getArticles({ limit: perPage, offset: (currentPage - 1) * perPage }),
   getCategories(),
 ]);
 
 const articles = articlesData.contents;
+const totalCount = articlesData.totalCount;
+const totalPages = Math.ceil(totalCount / perPage);
 
 const formatDateFull = (date: string) => formatDate(date, 'full');
 
@@ -65,23 +71,40 @@ const categoryColors: Record<string, string> = {
       </div>
       
       <!-- ページネーション -->
-      <div class="flex justify-center items-center gap-2 mt-10">
-        {[1, 2, 3].map(page => (
-          <button 
-            class={`w-9 h-9 flex items-center justify-center text-sm font-semibold rounded-xl transition-all ${
-              page === 1 
-                ? 'bg-gradient-purple-pink text-white' 
-                : 'bg-white/60 text-gray-500 border border-purple/15 hover:bg-purple/10 hover:text-purple'
-            }`}
-          >
-            {page}
-          </button>
-        ))}
-        <span class="text-gray-400 mx-1">...</span>
-        <button class="px-4 py-2 text-xs font-semibold tracking-wide bg-white/60 text-gray-500 border border-purple/15 rounded-xl hover:bg-purple/10 hover:text-purple transition-all">
-          NEXT →
-        </button>
-      </div>
+      {totalPages > 1 && (
+        <div class="flex justify-center items-center gap-2 mt-10">
+          {currentPage > 1 && (
+            <a 
+              href={`/miscellany?page=${currentPage - 1}`}
+              class="px-4 py-2 text-xs font-semibold tracking-wide bg-white/60 text-gray-500 border border-purple/15 rounded-xl hover:bg-purple/10 hover:text-purple transition-all"
+            >
+              ← PREV
+            </a>
+          )}
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <a 
+              href={`/miscellany?page=${page}`}
+              class={`w-9 h-9 flex items-center justify-center text-sm font-semibold rounded-xl transition-all ${
+                page === currentPage 
+                  ? 'bg-gradient-purple-pink text-white' 
+                  : 'bg-white/60 text-gray-500 border border-purple/15 hover:bg-purple/10 hover:text-purple'
+              }`}
+            >
+              {page}
+            </a>
+          ))}
+          
+          {currentPage < totalPages && (
+            <a 
+              href={`/miscellany?page=${currentPage + 1}`}
+              class="px-4 py-2 text-xs font-semibold tracking-wide bg-white/60 text-gray-500 border border-purple/15 rounded-xl hover:bg-purple/10 hover:text-purple transition-all"
+            >
+              NEXT →
+            </a>
+          )}
+        </div>
+      )}
       
       <!-- カテゴリで探す -->
       <div class="mt-12 p-6 bg-white/50 backdrop-blur-lg rounded-2xl border border-white/80">
