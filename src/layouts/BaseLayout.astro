@@ -28,7 +28,7 @@ const settings = await getSettings();
 </head>
 <body class="min-h-screen bg-gradient-main text-gray-700 font-sans relative overflow-x-hidden">
   <Background />
-  <Header currentPage={currentPage} />
+<Header currentPage={currentPage} siteName={settings.siteName} />
   
   <main class="relative z-10">
     <slot />
