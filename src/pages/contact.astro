@@ -28,7 +28,7 @@ const inquiryTypes = [
       
       <!-- フォーム -->
       <div class="glass-card p-6 md:p-10">
-        <form>
+        <form action="https://formspree.io/f/{YOUR_FORM_ID}" method="POST">
           <!-- お名前 -->
           <div class="mb-6">
             <label class="form-label">
@@ -37,6 +37,7 @@ const inquiryTypes = [
             </label>
             <input 
               type="text" 
+              name="name"
               placeholder="山田 太郎" 
               required
               class="form-input"
@@ -51,6 +52,7 @@ const inquiryTypes = [
             </label>
             <input 
               type="email" 
+              name="email"
               placeholder="example@email.com" 
               required
               class="form-input"
@@ -63,7 +65,7 @@ const inquiryTypes = [
               お問い合わせ種別
               <span class="form-required">必須</span>
             </label>
-            <select required class="form-input appearance-none bg-no-repeat bg-right pr-10" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E&quot;); background-position: right 1rem center;">
+            <select name="inquiry_type" required class="form-input appearance-none bg-no-repeat bg-right pr-10" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E&quot;); background-position: right 1rem center;">
               <option value="">選択してください</option>
               {inquiryTypes.map(type => (
                 <option value={type.value}>{type.label}</option>
@@ -78,6 +80,7 @@ const inquiryTypes = [
               <span class="form-required">必須</span>
             </label>
             <textarea 
+              name="message"
               placeholder="お問い合わせ内容をご記入ください" 
               rows="6"
               required
