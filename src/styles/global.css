@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ベーススタイル */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply font-sans text-gray-700 antialiased;
+  }
+}
+
+/* カスタムコンポーネント */
+@layer components {
+  /* グラスモーフィズムカード */
+  .glass-card {
+    @apply bg-white/65 backdrop-blur-glass rounded-[20px] border border-white/90 shadow-glass;
+    transition: all 0.3s ease;
+  }
+  
+  .glass-card:hover {
+    @apply shadow-glass-hover border-purple/20;
+    transform: translateY(-2px);
+  }
+
+  /* グラデーションテキスト */
+  .gradient-text {
+    @apply bg-gradient-purple-pink bg-clip-text text-transparent;
+  }
+
+  /* ボタン共通 */
+  .btn {
+    @apply inline-block px-5 py-2.5 rounded-3xl text-xs font-semibold tracking-wide text-white transition-all duration-300;
+  }
+  
+  .btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .btn-purple {
+    @apply bg-gradient-purple-pink shadow-button-purple;
+  }
+  
+  .btn-purple:hover {
+    box-shadow: 0 8px 28px rgba(168, 85, 247, 0.4);
+  }
+
+  .btn-pink {
+    @apply bg-gradient-pink shadow-button-pink;
+  }
+  
+  .btn-pink:hover {
+    box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35);
+  }
+
+  .btn-teal {
+    @apply bg-gradient-teal shadow-button-teal;
+  }
+  
+  .btn-teal:hover {
+    box-shadow: 0 8px 24px rgba(45, 212, 191, 0.35);
+  }
+
+  /* セクションタイトル */
+  .section-title {
+    @apply text-xs font-bold tracking-widest text-purple flex items-center gap-2;
+  }
+  
+  .section-title::before {
+    content: '';
+    @apply w-5 h-px bg-gradient-to-r from-purple to-transparent;
+  }
+}
+
+/* 背景オーブ */
+.bg-orb {
+  @apply fixed pointer-events-none;
+  filter: blur(60px);
+}
+
+.bg-orb-purple {
+  @apply bg-orb;
+  background: radial-gradient(ellipse, rgba(192, 132, 252, 0.25) 0%, transparent 70%);
+}
+
+.bg-orb-teal {
+  @apply bg-orb;
+  background: radial-gradient(ellipse, rgba(45, 212, 191, 0.2) 0%, transparent 70%);
+}
+
+.bg-orb-pink {
+  @apply bg-orb;
+  background: radial-gradient(ellipse, rgba(251, 146, 180, 0.18) 0%, transparent 70%);
+}
+
+/* 背景グリッド */
+.bg-grid {
+  @apply fixed inset-0 pointer-events-none;
+  background-image: 
+    linear-gradient(rgba(192, 132, 252, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(192, 132, 252, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* フォーム要素 */
+@layer components {
+  .form-input {
+    @apply w-full px-4 py-3.5 text-sm text-gray-700 bg-white/80 border border-purple/15 rounded-xl outline-none transition-all duration-200;
+  }
+  
+  .form-input:focus {
+    @apply border-purple/40 ring-4 ring-purple/10;
+  }
+  
+  .form-label {
+    @apply block text-sm font-semibold text-gray-700 mb-2;
+  }
+  
+  .form-required {
+    @apply ml-1.5 text-[10px] font-semibold text-pink bg-pink/10 px-1.5 py-0.5 rounded;
+  }
+}
+
+/* アニメーション */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}

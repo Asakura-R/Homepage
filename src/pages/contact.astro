@@ -1,0 +1,140 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import NavigationCards from '@components/NavigationCards.astro';
+import PageTitle from '@components/PageTitle.astro';
+import { getSettings } from '@lib/microcms';
+
+// microCMSからデータ取得
+const settings = await getSettings();
+
+const inquiryTypes = [
+  { value: 'live', label: 'ライブ出演依頼' },
+  { value: 'media', label: '取材・メディア出演依頼' },
+  { value: 'collaboration', label: 'コラボ・企画のご相談' },
+  { value: 'other', label: 'その他' },
+];
+---
+
+<BaseLayout title="お問い合わせ | アサクラ" currentPage="CONTACT">
+  <div class="pt-28 md:pt-32 pb-10 px-4 md:px-8">
+    <div class="max-w-xl mx-auto">
+      <PageTitle en="CONTACT" jp="お問い合わせ" />
+      
+      <!-- 説明文 -->
+      <p class="text-sm text-gray-500 text-center leading-relaxed mb-8 md:mb-10">
+        ライブ出演依頼、取材、その他お問い合わせは<br />
+        下記フォームよりお願いいたします。
+      </p>
+      
+      <!-- フォーム -->
+      <div class="glass-card p-6 md:p-10">
+        <form>
+          <!-- お名前 -->
+          <div class="mb-6">
+            <label class="form-label">
+              お名前
+              <span class="form-required">必須</span>
+            </label>
+            <input 
+              type="text" 
+              placeholder="山田 太郎" 
+              required
+              class="form-input"
+            />
+          </div>
+          
+          <!-- メールアドレス -->
+          <div class="mb-6">
+            <label class="form-label">
+              メールアドレス
+              <span class="form-required">必須</span>
+            </label>
+            <input 
+              type="email" 
+              placeholder="example@email.com" 
+              required
+              class="form-input"
+            />
+          </div>
+          
+          <!-- お問い合わせ種別 -->
+          <div class="mb-6">
+            <label class="form-label">
+              お問い合わせ種別
+              <span class="form-required">必須</span>
+            </label>
+            <select required class="form-input appearance-none bg-no-repeat bg-right pr-10" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E&quot;); background-position: right 1rem center;">
+              <option value="">選択してください</option>
+              {inquiryTypes.map(type => (
+                <option value={type.value}>{type.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          <!-- お問い合わせ内容 -->
+          <div class="mb-6">
+            <label class="form-label">
+              お問い合わせ内容
+              <span class="form-required">必須</span>
+            </label>
+            <textarea 
+              placeholder="お問い合わせ内容をご記入ください" 
+              rows="6"
+              required
+              class="form-input resize-y min-h-[150px]"
+            ></textarea>
+          </div>
+          
+          <!-- 注意事項 -->
+          <div class="p-4 bg-purple/5 rounded-xl mb-6">
+            <p class="text-xs text-gray-500 leading-relaxed">
+              ※ 内容によりご返信までにお時間をいただく場合がございます。<br />
+              ※ 営業目的のお問い合わせはご遠慮ください。
+            </p>
+          </div>
+          
+          <!-- 送信ボタン -->
+          <button 
+            type="submit"
+            class="w-full py-4 bg-gradient-purple-pink text-white font-semibold tracking-wide rounded-2xl shadow-button-purple transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(168,85,247,0.4)]"
+          >
+            送信する
+          </button>
+        </form>
+      </div>
+      
+      <!-- SNSでのお問い合わせ -->
+      <div class="mt-10 text-center">
+        <p class="text-xs text-gray-400 mb-4 tracking-wide">
+          SNSのDMでもお問い合わせいただけます
+        </p>
+        <div class="flex gap-3 justify-center">
+          {settings.twitterUrl && (
+            <a 
+              href={settings.twitterUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="w-12 h-12 bg-white/70 backdrop-blur-sm rounded-xl border border-purple/15 flex items-center justify-center text-xl transition-all hover:bg-purple/10 hover:border-purple/30 hover:-translate-y-0.5"
+              title="X (Twitter)"
+            >
+              𝕏
+            </a>
+          )}
+          {settings.instagramUrl && (
+            <a 
+              href={settings.instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="w-12 h-12 bg-white/70 backdrop-blur-sm rounded-xl border border-purple/15 flex items-center justify-center text-xl transition-all hover:bg-purple/10 hover:border-purple/30 hover:-translate-y-0.5"
+              title="Instagram"
+            >
+              📷
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <NavigationCards currentPage="CONTACT" />
+</BaseLayout>

@@ -1,0 +1,39 @@
+---
+interface Props {
+  twitterUrl?: string;
+  instagramUrl?: string;
+}
+
+const { twitterUrl, instagramUrl } = Astro.props;
+---
+
+<footer class="py-6 md:py-8 px-4 md:px-8 bg-white/50 backdrop-blur-sm border-t border-purple/10">
+  <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+    <span class="text-[11px] tracking-widest text-gray-400">
+      © 2025 ASAKURA
+    </span>
+    
+    <div class="flex gap-5">
+      {twitterUrl && (
+        <a 
+          href={twitterUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-xs text-gray-400 hover:text-purple transition-colors"
+        >
+          X (Twitter)
+        </a>
+      )}
+      {instagramUrl && (
+        <a 
+          href={instagramUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-xs text-gray-400 hover:text-purple transition-colors"
+        >
+          Instagram
+        </a>
+      )}
+    </div>
+  </div>
+</footer>

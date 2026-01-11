@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="micGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="12" rx="9" ry="10" fill="url(#micGradient)" />
+  <path d="M17 8h14M16 11h16M16 14h16M17 17h14" stroke="white" stroke-width="1" opacity="0.4" stroke-linecap="round"/>
+  <rect x="21" y="21" width="6" height="5" rx="1" fill="url(#micGradient)" />
+  <circle cx="24" cy="29" r="3" fill="url(#micGradient)" />
+  <rect x="22" y="31" width="4" height="10" fill="url(#micGradient)" />
+  <ellipse cx="24" cy="43" rx="8" ry="3" fill="url(#micGradient)" />
+</svg>

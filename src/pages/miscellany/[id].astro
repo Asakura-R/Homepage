@@ -1,0 +1,147 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import NavigationCards from '@components/NavigationCards.astro';
+import { getArticles, getArticle, formatDate } from '@lib/microcms';
+
+// 静的パス生成
+export async function getStaticPaths() {
+  const articlesData = await getArticles({ limit: 100 });
+  
+  return articlesData.contents.map((article, index, arr) => ({
+    params: { id: article.id },
+    props: { 
+      article,
+      prevArticle: arr[index + 1] || null,
+      nextArticle: arr[index - 1] || null,
+    },
+  }));
+}
+
+const { article, prevArticle, nextArticle } = Astro.props;
+
+const formatDateFull = (date: string) => formatDate(date, 'full');
+
+const categoryColors: Record<string, string> = {
+  teal: 'bg-teal/10 text-teal-dark border-teal/25',
+  pink: 'bg-pink/10 text-pink-dark border-pink/25',
+  violet: 'bg-violet/10 text-violet border-violet/25',
+};
+---
+
+<BaseLayout title={`${article.title} | アサクラ`} currentPage="MISC.">
+  <div class="pt-28 md:pt-32 pb-10 px-4 md:px-8">
+    <article class="max-w-2xl mx-auto">
+      
+      <!-- パンくずリスト -->
+      <nav class="mb-8">
+        <a 
+          href="/miscellany"
+          class="text-xs text-gray-400 hover:text-purple transition-colors"
+        >
+          ← 雑記一覧に戻る
+        </a>
+      </nav>
+      
+      <!-- 記事ヘッダー -->
+      <header class="mb-8 md:mb-10">
+        <div class="flex items-center gap-4 mb-4">
+          <span class="text-sm text-gray-400 tracking-wide">
+            {formatDateFull(article.publishedAt)}
+          </span>
+          {article.category && (
+            <span class={`text-[11px] font-semibold tracking-wide px-3 py-1 rounded-xl border ${categoryColors[article.category.color]}`}>
+              {article.category.name}
+            </span>
+          )}
+        </div>
+        <h1 class="text-2xl md:text-3xl font-semibold text-gray-800 leading-relaxed">
+          {article.title}
+        </h1>
+      </header>
+      
+      <!-- 記事本文 -->
+      <div class="glass-card p-6 md:p-10">
+        <div class="article-content" set:html={article.content} />
+      </div>
+      
+      <!-- 前後記事ナビゲーション -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10">
+        {prevArticle ? (
+          <a 
+            href={`/miscellany/${prevArticle.id}`}
+            class="p-5 bg-white/60 backdrop-blur-lg rounded-2xl border border-white/80 transition-all hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-glass"
+          >
+            <span class="block text-[10px] font-semibold tracking-widest text-gray-400 mb-2">
+              ← PREV
+            </span>
+            <span class="block text-sm font-medium text-gray-700 leading-relaxed">
+              {prevArticle.title}
+            </span>
+          </a>
+        ) : <div />}
+        
+        {nextArticle ? (
+          <a 
+            href={`/miscellany/${nextArticle.id}`}
+            class="p-5 bg-white/60 backdrop-blur-lg rounded-2xl border border-white/80 text-right transition-all hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-glass"
+          >
+            <span class="block text-[10px] font-semibold tracking-widest text-gray-400 mb-2">
+              NEXT →
+            </span>
+            <span class="block text-sm font-medium text-gray-700 leading-relaxed">
+              {nextArticle.title}
+            </span>
+          </a>
+        ) : <div />}
+      </div>
+      
+      <!-- 一覧に戻る -->
+      <div class="text-center mt-8">
+        <a href="/miscellany" class="btn btn-teal">
+          記事一覧を見る
+        </a>
+      </div>
+    </article>
+  </div>
+  
+  <NavigationCards currentPage="MISC." />
+</BaseLayout>
+
+<style is:global>
+  .article-content {
+    @apply text-gray-600 leading-loose;
+  }
+  
+  .article-content p {
+    @apply mb-5;
+  }
+  
+  .article-content h2 {
+    @apply text-lg font-semibold text-gray-800 mt-10 mb-5 pb-3 border-b border-purple/15;
+  }
+  
+  .article-content ol,
+  .article-content ul {
+    @apply my-5 pl-6;
+  }
+  
+  .article-content ol {
+    @apply list-decimal;
+  }
+  
+  .article-content ul {
+    @apply list-disc;
+  }
+  
+  .article-content li {
+    @apply mb-2;
+  }
+  
+  .article-content strong {
+    @apply text-purple font-semibold;
+  }
+  
+  .article-content a {
+    @apply text-teal-dark underline hover:no-underline;
+  }
+</style>

@@ -1,0 +1,72 @@
+---
+interface Props {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}
+
+const { size = 'sm' } = Astro.props;
+
+const sizes = {
+  sm: { width: 24, height: 24, viewBox: '0 0 48 48' },
+  md: { width: 48, height: 48, viewBox: '0 0 48 48' },
+  lg: { width: 100, height: 130, viewBox: '0 0 100 130' },
+  xl: { width: 120, height: 160, viewBox: '0 0 120 160' },
+};
+
+const { width, height, viewBox } = sizes[size];
+const isLarge = size === 'lg' || size === 'xl';
+---
+
+{isLarge ? (
+  <!-- 大きいサンパチマイク -->
+  <svg width={width} height={height} viewBox={viewBox} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id={`micGradient-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f472b6" />
+        <stop offset="50%" stop-color="#c084fc" />
+        <stop offset="100%" stop-color="#a855f7" />
+      </linearGradient>
+      <filter id={`glow-${size}`}>
+        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+    {size === 'xl' ? (
+      <>
+        <ellipse cx="60" cy="35" rx="28" ry="32" fill={`url(#micGradient-${size})`} filter={`url(#glow-${size})`} />
+        <path d="M38 22h44M35 30h50M35 38h50M38 46h44" stroke="white" stroke-width="2" opacity="0.35" stroke-linecap="round"/>
+        <rect x="50" y="65" width="20" height="15" rx="2" fill={`url(#micGradient-${size})`} />
+        <circle cx="60" cy="90" r="10" fill={`url(#micGradient-${size})`} />
+        <rect x="54" y="98" width="12" height="40" fill={`url(#micGradient-${size})`} />
+        <ellipse cx="60" cy="145" rx="25" ry="8" fill={`url(#micGradient-${size})`} />
+      </>
+    ) : (
+      <>
+        <ellipse cx="50" cy="28" rx="22" ry="25" fill={`url(#micGradient-${size})`} filter={`url(#glow-${size})`} />
+        <path d="M32 18h36M30 25h40M30 32h40M32 39h36" stroke="white" stroke-width="1.5" opacity="0.35" stroke-linecap="round"/>
+        <rect x="42" y="52" width="16" height="12" rx="2" fill={`url(#micGradient-${size})`} />
+        <circle cx="50" cy="72" r="8" fill={`url(#micGradient-${size})`} />
+        <rect x="45" y="78" width="10" height="32" fill={`url(#micGradient-${size})`} />
+        <ellipse cx="50" cy="116" rx="20" ry="6" fill={`url(#micGradient-${size})`} />
+      </>
+    )}
+  </svg>
+) : (
+  <!-- 小さいサンパチマイク -->
+  <svg width={width} height={height} viewBox={viewBox} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id={`micGradient-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f472b6" />
+        <stop offset="100%" stop-color="#c084fc" />
+      </linearGradient>
+    </defs>
+    <ellipse cx="24" cy="12" rx="9" ry="10" fill={`url(#micGradient-${size})`} />
+    <path d="M17 8h14M16 11h16M16 14h16M17 17h14" stroke="white" stroke-width="1" opacity="0.4" stroke-linecap="round"/>
+    <rect x="21" y="21" width="6" height="5" rx="1" fill={`url(#micGradient-${size})`} />
+    <circle cx="24" cy="29" r="3" fill={`url(#micGradient-${size})`} />
+    <rect x="22" y="31" width="4" height="10" fill={`url(#micGradient-${size})`} />
+    <ellipse cx="24" cy="43" rx="8" ry="3" fill={`url(#micGradient-${size})`} />
+  </svg>
+)}

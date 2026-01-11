@@ -1,0 +1,114 @@
+---
+interface Props {
+  currentPage?: string;
+}
+
+const { currentPage = '' } = Astro.props;
+
+const navItems = [
+  { label: 'ABOUT', href: '/about' },
+  { label: 'LIVE', href: '/live' },
+  { label: 'MISC.', href: '/miscellany' },
+  { label: 'CONTACT', href: '/contact' },
+];
+---
+
+<header 
+  id="header"
+  class="fixed top-0 left-0 right-0 px-4 md:px-8 py-3 md:py-4 flex justify-between items-center z-50 transition-all duration-300"
+>
+  <a 
+    href="/" 
+    class="text-base md:text-lg font-bold tracking-widest gradient-text"
+  >
+    ASAKURA
+  </a>
+  
+  <!-- PC ナビゲーション -->
+  <nav class="hidden md:flex gap-8">
+    {navItems.map(item => {
+      const isActive = currentPage === item.label;
+      return (
+        <a
+          href={item.href}
+          class={`text-xs font-semibold tracking-wide transition-colors relative ${
+            isActive ? 'text-purple' : 'text-gray-500 hover:text-purple'
+          }`}
+        >
+          {item.label}
+          {isActive && (
+            <span class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple" />
+          )}
+        </a>
+      );
+    })}
+  </nav>
+
+  <!-- モバイル ハンバーガーボタン -->
+  <button 
+    id="menu-toggle"
+    class="md:hidden w-8 h-8 flex flex-col justify-center items-center gap-1.5"
+    aria-label="メニューを開く"
+  >
+    <span class="menu-line w-5 h-0.5 bg-gray-600 transition-all duration-300"></span>
+    <span class="menu-line w-5 h-0.5 bg-gray-600 transition-all duration-300"></span>
+    <span class="menu-line w-5 h-0.5 bg-gray-600 transition-all duration-300"></span>
+  </button>
+</header>
+
+<!-- モバイルメニュー -->
+<div 
+  id="mobile-menu"
+  class="fixed inset-0 bg-white/95 backdrop-blur-lg z-40 flex flex-col items-center justify-center gap-8 opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"
+>
+  {navItems.map(item => {
+    const isActive = currentPage === item.label;
+    return (
+      <a
+        href={item.href}
+        class={`text-xl font-semibold tracking-wide ${
+          isActive ? 'text-purple' : 'text-gray-700'
+        }`}
+      >
+        {item.label}
+      </a>
+    );
+  })}
+</div>
+
+<script>
+  // ヘッダースクロール処理
+  const header = document.getElementById('header');
+  
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) {
+      header?.classList.add('bg-white/80', 'backdrop-blur-lg', 'border-b', 'border-pink/10');
+    } else {
+      header?.classList.remove('bg-white/80', 'backdrop-blur-lg', 'border-b', 'border-pink/10');
+    }
+  });
+
+  // モバイルメニュー
+  const menuToggle = document.getElementById('menu-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuLines = document.querySelectorAll('.menu-line');
+  let isMenuOpen = false;
+
+  menuToggle?.addEventListener('click', () => {
+    isMenuOpen = !isMenuOpen;
+    
+    if (isMenuOpen) {
+      mobileMenu?.classList.remove('opacity-0', 'pointer-events-none');
+      mobileMenu?.classList.add('opacity-100', 'pointer-events-auto');
+      menuLines[0]?.classList.add('rotate-45', 'translate-y-2');
+      menuLines[1]?.classList.add('opacity-0');
+      menuLines[2]?.classList.add('-rotate-45', '-translate-y-2');
+    } else {
+      mobileMenu?.classList.add('opacity-0', 'pointer-events-none');
+      mobileMenu?.classList.remove('opacity-100', 'pointer-events-auto');
+      menuLines[0]?.classList.remove('rotate-45', 'translate-y-2');
+      menuLines[1]?.classList.remove('opacity-0');
+      menuLines[2]?.classList.remove('-rotate-45', '-translate-y-2');
+    }
+  });
+</script>

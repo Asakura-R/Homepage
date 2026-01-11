@@ -1,0 +1,115 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import NavigationCards from '@components/NavigationCards.astro';
+import PageTitle from '@components/PageTitle.astro';
+import { getArticles, getCategories, formatDate } from '@lib/microcms';
+
+// microCMSからデータ取得
+const [articlesData, categories] = await Promise.all([
+  getArticles({ limit: 10 }),
+  getCategories(),
+]);
+
+const articles = articlesData.contents;
+
+const formatDateFull = (date: string) => formatDate(date, 'full');
+
+// カテゴリ色
+const categoryColors: Record<string, string> = {
+  teal: 'bg-teal/10 text-teal-dark border-teal/25',
+  pink: 'bg-pink/10 text-pink-dark border-pink/25',
+  violet: 'bg-violet/10 text-violet border-violet/25',
+};
+---
+
+<BaseLayout title="雑記 | アサクラ" currentPage="MISC.">
+  <div class="pt-28 md:pt-32 pb-10 px-4 md:px-8">
+    <div class="max-w-3xl mx-auto">
+      <PageTitle en="MISCELLANY" jp="雑記" />
+      
+      <!-- 記事一覧 -->
+      <div class="flex flex-col gap-4 md:gap-5">
+        {articles.map(article => (
+          <a 
+            href={`/miscellany/${article.id}`}
+            class="block p-5 md:p-7 bg-white/60 backdrop-blur-lg rounded-2xl border border-white/80 transition-all hover:-translate-y-1 hover:bg-white/75 hover:border-teal/20 hover:shadow-glass-hover"
+          >
+            <!-- 上部：日付とカテゴリ -->
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-gray-400 tracking-wide">
+                {formatDateFull(article.publishedAt)}
+              </span>
+              {article.category && (
+                <span class={`text-[10px] font-semibold tracking-wide px-2.5 py-1 rounded-lg border ${categoryColors[article.category.color]}`}>
+                  {article.category.name}
+                </span>
+              )}
+            </div>
+            
+            <!-- タイトル -->
+            <h2 class="text-base md:text-lg font-semibold text-gray-800 mb-3 leading-relaxed">
+              {article.title}
+            </h2>
+            
+            <!-- 抜粋 -->
+            <p class="text-sm text-gray-500 leading-relaxed line-clamp-2">
+              {article.excerpt}
+            </p>
+            
+            <!-- READ MORE -->
+            <span class="inline-block mt-4 text-[11px] font-semibold tracking-widest text-gray-400 transition-colors group-hover:text-teal-dark">
+              READ MORE →
+            </span>
+          </a>
+        ))}
+      </div>
+      
+      <!-- ページネーション -->
+      <div class="flex justify-center items-center gap-2 mt-10">
+        {[1, 2, 3].map(page => (
+          <button 
+            class={`w-9 h-9 flex items-center justify-center text-sm font-semibold rounded-xl transition-all ${
+              page === 1 
+                ? 'bg-gradient-purple-pink text-white' 
+                : 'bg-white/60 text-gray-500 border border-purple/15 hover:bg-purple/10 hover:text-purple'
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+        <span class="text-gray-400 mx-1">...</span>
+        <button class="px-4 py-2 text-xs font-semibold tracking-wide bg-white/60 text-gray-500 border border-purple/15 rounded-xl hover:bg-purple/10 hover:text-purple transition-all">
+          NEXT →
+        </button>
+      </div>
+      
+      <!-- カテゴリで探す -->
+      <div class="mt-12 p-6 bg-white/50 backdrop-blur-lg rounded-2xl border border-white/80">
+        <p class="text-[11px] font-semibold tracking-widest text-gray-400 text-center mb-4">
+          CATEGORY
+        </p>
+        <div class="flex flex-wrap gap-2.5 justify-center">
+          {categories.map(category => (
+            <a 
+              href={`/miscellany?category=${category.slug}`}
+              class="px-4 py-2 text-xs font-medium bg-white/70 text-gray-500 border border-purple/10 rounded-full transition-all hover:bg-teal/10 hover:text-teal-dark hover:border-teal/30"
+            >
+              {category.name}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <NavigationCards currentPage="MISC." />
+</BaseLayout>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

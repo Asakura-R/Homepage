@@ -1,0 +1,160 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import NavigationCards from '@components/NavigationCards.astro';
+import SanpachiMic from '@components/SanpachiMic.astro';
+import { getSettings, getProfile, getNextLive, getLatestArticles, formatDate, getDayOfWeek } from '@lib/microcms';
+
+// microCMSからデータ取得
+const [settings, profile, nextLive, latestArticles] = await Promise.all([
+  getSettings(),
+  getProfile(),
+  getNextLive(),
+  getLatestArticles(3),
+]);
+
+// 日付フォーマット
+const formatDateFull = (date: string) => formatDate(date, 'full');
+const formatDateShort = (date: string) => formatDate(date, 'short');
+---
+
+<BaseLayout title="アサクラ Official Website">
+  <!-- Hero Section -->
+  <section class="min-h-screen flex items-center justify-center pt-16 pb-8 px-4 md:px-8">
+    <div class="flex flex-col md:flex-row items-center gap-8 md:gap-16 max-w-4xl">
+      
+      <!-- 写真エリア -->
+      <div class="flex-shrink-0 w-52 h-64 md:w-72 md:h-96 bg-white/60 backdrop-blur-glass rounded-3xl border border-purple/15 shadow-glass flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+        <!-- 装飾背景 -->
+        <div class="absolute inset-0 bg-gradient-to-br from-purple/5 to-pink/5 pointer-events-none"></div>
+        
+        {settings.profileImage ? (
+          <img 
+            src={settings.profileImage.url} 
+            alt={settings.artistName}
+            class="w-full h-full object-cover"
+          />
+        ) : (
+          <>
+            <SanpachiMic size="xl" />
+            <span class="text-[11px] text-gray-400 tracking-widest">Photo Coming Soon</span>
+          </>
+        )}
+      </div>
+      
+      <!-- テキスト情報 -->
+      <div class="text-center md:text-left">
+        <!-- ラベル -->
+        <div class="inline-block px-4 py-2 bg-gradient-to-r from-purple/15 to-pink/15 rounded-full border border-purple/20 mb-4">
+          <span class="text-xs font-semibold tracking-widest text-purple">
+            {settings.artistLabel}
+          </span>
+        </div>
+        
+        <!-- 芸名 -->
+        <h1 class="text-4xl md:text-6xl lg:text-7xl font-medium tracking-wide gradient-text mb-2">
+          {settings.artistName}
+        </h1>
+        
+        <!-- 英語表記 -->
+        <p class="text-sm tracking-[0.25em] text-gray-400 font-medium mb-6 md:mb-8">
+          {settings.artistNameEn}
+        </p>
+        
+        <!-- キャッチコピー -->
+        <div class="py-4 px-5 md:px-6 bg-white/50 backdrop-blur-sm rounded-2xl border-l-[3px] border-purple mb-6 md:mb-8">
+          <p class="text-sm md:text-base tracking-wide text-gray-600 leading-relaxed whitespace-pre-line">
+            {profile.catchphrase}
+          </p>
+        </div>
+        
+        <!-- SNSリンク -->
+        <div class="flex gap-3 justify-center md:justify-start">
+          {settings.twitterUrl && (
+            <a 
+              href={settings.twitterUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="w-11 h-11 bg-white/70 backdrop-blur-sm rounded-xl border border-purple/15 flex items-center justify-center text-lg transition-all hover:bg-purple/10 hover:border-purple/30 hover:-translate-y-0.5"
+              title="X (Twitter)"
+            >
+              𝕏
+            </a>
+          )}
+          {settings.instagramUrl && (
+            <a 
+              href={settings.instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="w-11 h-11 bg-white/70 backdrop-blur-sm rounded-xl border border-purple/15 flex items-center justify-center text-lg transition-all hover:bg-purple/10 hover:border-purple/30 hover:-translate-y-0.5"
+              title="Instagram"
+            >
+              📷
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest Section -->
+  <section class="py-10 md:py-12 px-4 md:px-8">
+    <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-5 md:gap-8">
+      
+      <!-- Next Live -->
+      <div class="glass-card p-6 md:p-8">
+        <div class="flex items-center gap-2.5 mb-5">
+          <SanpachiMic size="md" />
+          <h2 class="text-xs font-bold tracking-widest text-pink">NEXT LIVE</h2>
+        </div>
+        
+        {nextLive ? (
+          <>
+            <div class="text-2xl md:text-3xl font-medium text-gray-800 mb-1">
+              {formatDateFull(nextLive.date)}
+              <span class="text-xs ml-3 px-2.5 py-1 bg-pink/15 rounded-xl text-pink-dark font-semibold">
+                {getDayOfWeek(nextLive.date)}
+              </span>
+            </div>
+            <h3 class="text-base font-semibold text-gray-700 mt-4 mb-2">{nextLive.title}</h3>
+            <p class="text-sm text-gray-500 mb-1">📍 {nextLive.venue}</p>
+            <p class="text-xs text-gray-400">
+              {nextLive.openTime} OPEN / {nextLive.startTime} START
+            </p>
+            <a href="/live" class="btn btn-pink mt-5">VIEW ALL →</a>
+          </>
+        ) : (
+          <p class="text-sm text-gray-400">現在予定されているライブはありません</p>
+        )}
+      </div>
+      
+      <!-- Latest Miscellany -->
+      <div class="glass-card p-6 md:p-8">
+        <div class="flex items-center gap-2.5 mb-5">
+          <span class="text-xl">✏️</span>
+          <h2 class="text-xs font-bold tracking-widest text-teal-dark">LATEST MISCELLANY</h2>
+        </div>
+        
+        <div class="flex flex-col gap-2">
+          {latestArticles.map(article => (
+            <a 
+              href={`/miscellany/${article.id}`}
+              class="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-teal/10"
+            >
+              <span class="text-[11px] text-gray-400 min-w-[72px]">
+                {formatDateFull(article.publishedAt)}
+              </span>
+              <span class="text-sm text-gray-700 font-medium">
+                {article.title}
+              </span>
+            </a>
+          ))}
+        </div>
+        
+        <a href="/miscellany" class="btn btn-teal mt-4">READ MORE →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Navigation Cards -->
+  <NavigationCards />
+</BaseLayout>

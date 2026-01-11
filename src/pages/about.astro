@@ -1,0 +1,125 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import NavigationCards from '@components/NavigationCards.astro';
+import PageTitle from '@components/PageTitle.astro';
+import SanpachiMic from '@components/SanpachiMic.astro';
+import { getSettings, getProfile } from '@lib/microcms';
+
+// microCMSからデータ取得
+const [settings, profile] = await Promise.all([
+  getSettings(),
+  getProfile(),
+]);
+---
+
+<BaseLayout title="プロフィール | アサクラ" currentPage="ABOUT">
+  <div class="pt-28 md:pt-32 pb-10 px-4 md:px-8">
+    <div class="max-w-3xl mx-auto">
+      <PageTitle en="ABOUT" jp="プロフィール" />
+      
+      <!-- プロフィールセクション -->
+      <div class="glass-card p-6 md:p-10 mb-6 md:mb-8">
+        <div class="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start">
+          
+          <!-- 写真エリア -->
+          <div class="flex-shrink-0 w-40 h-52 md:w-52 md:h-64 bg-purple/5 rounded-2xl border border-purple/10 flex flex-col items-center justify-center gap-3">
+            {settings.profileImage ? (
+              <img 
+                src={settings.profileImage.url} 
+                alt={settings.artistName}
+                class="w-full h-full object-cover rounded-2xl"
+              />
+            ) : (
+              <>
+                <SanpachiMic size="lg" />
+                <span class="text-[10px] text-gray-400 tracking-wide">Photo Coming Soon</span>
+              </>
+            )}
+          </div>
+          
+          <!-- テキスト情報 -->
+          <div class="flex-1 text-center md:text-left">
+            <!-- ラベル -->
+            <div class="inline-block px-3 py-1.5 bg-gradient-to-r from-purple/15 to-pink/15 rounded-full border border-purple/20 mb-3">
+              <span class="text-[11px] font-semibold tracking-widest text-purple">
+                {settings.artistLabel}
+              </span>
+            </div>
+            
+            <!-- 芸名 -->
+            <h2 class="text-3xl md:text-4xl font-medium tracking-wide gradient-text mb-1">
+              {settings.artistName}
+            </h2>
+            
+            <!-- 英語表記 -->
+            <p class="text-xs tracking-[0.2em] text-gray-400 font-medium mb-5">
+              {settings.artistNameEn}
+            </p>
+            
+            <!-- キャッチコピー -->
+            <div class="py-3.5 px-4 bg-purple/5 rounded-xl border-l-[3px] border-purple mb-5">
+              <p class="text-sm tracking-wide text-gray-600 leading-relaxed whitespace-pre-line">
+                {profile.catchphrase}
+              </p>
+            </div>
+            
+            <!-- 自己紹介文 -->
+            <div class="text-sm text-gray-600 leading-loose" set:html={profile.introduction} />
+          </div>
+        </div>
+      </div>
+      
+      <!-- 経歴セクション -->
+      {profile.biography && profile.biography.length > 0 && (
+        <div class="glass-card p-6 md:p-10 mb-6 md:mb-8">
+          <h2 class="section-title mb-5">BIOGRAPHY</h2>
+          
+          <div class="flex flex-col gap-3">
+            {profile.biography.map(item => (
+              <div class="flex items-start gap-5 p-3 rounded-xl transition-colors hover:bg-purple/5">
+                <span class="text-sm font-semibold text-purple min-w-[50px]">
+                  {item.year}
+                </span>
+                <span class="text-sm text-gray-600 leading-relaxed">
+                  {item.content}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      <!-- SNSセクション -->
+      <div class="glass-card p-6 md:p-10">
+        <h2 class="section-title mb-5">SNS</h2>
+        
+        <div class="flex flex-col md:flex-row gap-4">
+          {settings.twitterUrl && (
+            <a 
+              href={settings.twitterUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex-1 flex items-center justify-center gap-3 p-4 bg-purple/5 rounded-xl border border-purple/10 transition-all hover:bg-purple/10 hover:border-purple/20 hover:-translate-y-0.5"
+            >
+              <span class="text-2xl">𝕏</span>
+              <span class="text-sm font-semibold text-gray-700">X (Twitter)</span>
+            </a>
+          )}
+          {settings.instagramUrl && (
+            <a 
+              href={settings.instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex-1 flex items-center justify-center gap-3 p-4 bg-purple/5 rounded-xl border border-purple/10 transition-all hover:bg-purple/10 hover:border-purple/20 hover:-translate-y-0.5"
+            >
+              <span class="text-2xl">📷</span>
+              <span class="text-sm font-semibold text-gray-700">Instagram</span>
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <NavigationCards currentPage="ABOUT" />
+</BaseLayout>

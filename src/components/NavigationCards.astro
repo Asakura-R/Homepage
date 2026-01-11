@@ -1,0 +1,43 @@
+---
+interface Props {
+  currentPage?: string;
+}
+
+const { currentPage = '' } = Astro.props;
+
+const cards = [
+  { label: 'ABOUT', jp: 'プロフィール', href: '/about', color: 'purple' },
+  { label: 'LIVE', jp: 'ライブ情報', href: '/live', color: 'pink' },
+  { label: 'MISC.', jp: '雑記', href: '/miscellany', color: 'teal' },
+  { label: 'CONTACT', jp: 'お問い合わせ', href: '/contact', color: 'violet' },
+].filter(card => card.label !== currentPage);
+---
+
+<section class="py-12 md:py-16 px-4 md:px-8 max-w-4xl mx-auto">
+  <div class={`grid gap-3 md:gap-4 ${cards.length === 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3'}`}>
+    {cards.map(card => (
+      <a
+        href={card.href}
+        class="nav-card group p-5 md:p-6 bg-white/60 backdrop-blur-lg rounded-2xl border border-white/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-hover"
+        data-color={card.color}
+      >
+        <span class="block text-sm font-semibold tracking-widest text-gray-700 mb-1">
+          {card.label}
+        </span>
+        <span class="block text-[11px] text-gray-400">
+          {card.jp}
+        </span>
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  .nav-card:hover {
+    border-color: var(--hover-color);
+  }
+  .nav-card[data-color="purple"]:hover { --hover-color: rgba(168, 85, 247, 0.25); }
+  .nav-card[data-color="pink"]:hover { --hover-color: rgba(236, 72, 153, 0.25); }
+  .nav-card[data-color="teal"]:hover { --hover-color: rgba(45, 212, 191, 0.25); }
+  .nav-card[data-color="violet"]:hover { --hover-color: rgba(139, 92, 246, 0.25); }
+</style>
