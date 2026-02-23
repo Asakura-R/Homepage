@@ -1,20 +1,35 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import NavigationCards from '@components/NavigationCards.astro';
-import { getArticles, getArticle, formatDate } from '@lib/microcms';
+import { getAllArticles, formatDate } from '@lib/microcms';
 
 // 静的パス生成
 export async function getStaticPaths() {
-  const articlesData = await getArticles({ limit: 100 });
+  const allArticles = await getAllArticles();
   
-  return articlesData.contents.map((article, index, arr) => ({
-    params: { id: article.id },
-    props: { 
-      article,
-      prevArticle: arr[index + 1] || null,
-      nextArticle: arr[index - 1] || null,
-    },
-  }));
+  // 限定公開でない記事のみ（前後ナビ用）
+  const publicArticles = allArticles.filter(a => !a.limited);
+  
+  return allArticles.map((article) => {
+    // 現在の記事が限定公開の場合、前後ナビは表示しない
+    let prevArticle = null;
+    let nextArticle = null;
+    
+    if (!article.limited) {
+      const publicIndex = publicArticles.findIndex(a => a.id === article.id);
+      prevArticle = publicArticles[publicIndex + 1] || null;
+      nextArticle = publicArticles[publicIndex - 1] || null;
+    }
+    
+    return {
+      params: { id: article.id },
+      props: { 
+        article,
+        prevArticle,
+        nextArticle,
+      },
+    };
+  });
 }
 
 const { article, prevArticle, nextArticle } = Astro.props;
@@ -30,7 +45,7 @@ const categoryColors: Record<string, string> = {
 
 <BaseLayout title={`${article.title} | アサクラ`} currentPage="MISC.">
   <div class="pt-28 md:pt-32 pb-10 px-4 md:px-8">
-    <article class="max-w-5xl mx-auto">
+    <article class="max-w-2xl mx-auto">
       
       <!-- パンくずリスト -->
       <nav class="mb-8">
