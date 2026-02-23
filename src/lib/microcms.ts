@@ -42,6 +42,7 @@ export type Article = {
   excerpt?: string;
   category?: Category;
   publishedAt: string;
+  limited?: boolean;
 };
 
 export type Settings = {
@@ -107,9 +108,14 @@ export async function getArticles(options?: { limit?: number; offset?: number; c
     offset: options?.offset || 0,
   };
   
+  // 限定公開記事を除外
+  let filters = 'limited[not_equals]true';
+  
   if (options?.categoryId) {
-    queries.filters = `category[equals]${options.categoryId}`;
+    filters = `category[equals]${options.categoryId}[and]limited[not_equals]true`;
   }
+  
+  queries.filters = filters;
   
   return await client.get<{ contents: Article[]; totalCount: number }>({
     endpoint: 'articles',
@@ -124,10 +130,22 @@ export async function getArticle(id: string): Promise<Article> {
   });
 }
 
+// 全記事取得（限定公開含む、静的パス生成用）
+export async function getAllArticles(): Promise<Article[]> {
+  const result = await client.get<{ contents: Article[] }>({
+    endpoint: 'articles',
+    queries: { limit: 100 },
+  });
+  return result.contents;
+}
+
 export async function getLatestArticles(limit = 3): Promise<Article[]> {
   const result = await client.get<{ contents: Article[] }>({
     endpoint: 'articles',
-    queries: { limit },
+    queries: { 
+      limit,
+      filters: 'limited[not_equals]true',
+    },
   });
   return result.contents;
 }
