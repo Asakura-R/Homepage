@@ -1,178 +1,170 @@
-import { createClient } from 'microcms-js-sdk';
+import { createClient } from "microcms-js-sdk";
+import type { MicroCMSQueries } from "microcms-js-sdk";
 
-// microCMSクライアント
+/* --------------------------------------------------------------------------
+   クライアント
+   -------------------------------------------------------------------------- */
+
+if (!process.env.MICROCMS_SERVICE_DOMAIN) {
+  throw new Error("MICROCMS_SERVICE_DOMAIN が設定されていません");
+}
+if (!process.env.MICROCMS_API_KEY) {
+  throw new Error("MICROCMS_API_KEY が設定されていません");
+}
+
 export const client = createClient({
-  serviceDomain: import.meta.env.MICROCMS_SERVICE_DOMAIN,
-  apiKey: import.meta.env.MICROCMS_API_KEY,
+  serviceDomain: process.env.MICROCMS_SERVICE_DOMAIN,
+  apiKey: process.env.MICROCMS_API_KEY,
 });
 
-// 型定義
-export type Profile = {
-  catchphrase: string;
-  introduction: string;
-  biography: {
-    year: string;
-    content: string;
-  }[];
-};
+/* --------------------------------------------------------------------------
+   型
+   -------------------------------------------------------------------------- */
 
-export type Live = {
-  id: string;
-  title: string;
-  date: string;
-  venue: string;
-  openTime?: string;
-  startTime?: string;
-  ticketUrl?: string;
-  note?: string;
-  isPublished: boolean;
-};
+/** カテゴリ色。値は microCMS のセレクトフィールドの選択肢と一致させる */
+export type CategoryColorKey =
+  | "green"
+  | "olive"
+  | "amber"
+  | "orange"
+  | "red"
+  | "magenta"
+  | "blue";
 
 export type Category = {
   id: string;
   name: string;
-  slug: string;
-  color: 'teal' | 'pink' | 'violet';
+  /** microCMS のセレクトは配列で返る */
+  color?: CategoryColorKey[];
 };
 
 export type Article = {
   id: string;
   title: string;
-  content: string;
-  excerpt?: string;
+  body: string;
   category?: Category;
-  publishedAt: string;
-  limited?: boolean;
+  publishedAt?: string;
+  revisedAt?: string;
+  createdAt: string;
 };
 
-export type Settings = {
-  siteName: string;
-  siteDescription?: string;
-  artistName: string;
-  artistNameEn: string;
-  artistLabel: string;
-  twitterUrl?: string;
-  instagramUrl?: string;
-  ogImage?: { url: string };
-  profileImage?: { url: string };
+export type Event = {
+  id: string;
+  title: string;
+  /** ISO 8601 */
+  date: string;
+  venue?: string;
+  detail?: string;
+  reserveUrl?: string;
 };
 
-// API取得関数
-export async function getSettings(): Promise<Settings> {
-  return await client.get({ endpoint: 'settings' });
+type ListResponse<T> = {
+  contents: T[];
+  totalCount: number;
+  offset: number;
+  limit: number;
+};
+
+/* --------------------------------------------------------------------------
+   取得関数
+   -------------------------------------------------------------------------- */
+
+export const ARTICLES_PER_PAGE = 10;
+
+export async function getArticles(queries?: MicroCMSQueries) {
+  return client.get<ListResponse<Article>>({
+    endpoint: "miscellany",
+    queries: { limit: ARTICLES_PER_PAGE, orders: "-publishedAt", ...queries },
+  });
 }
 
-export async function getProfile(): Promise<Profile> {
-  return await client.get({ endpoint: 'profile' });
+export async function getArticle(id: string, draftKey?: string) {
+  return client.getListDetail<Article>({
+    endpoint: "miscellany",
+    contentId: id,
+    queries: draftKey ? { draftKey } : undefined,
+  });
 }
 
-export async function getLives() {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const [upcoming, past] = await Promise.all([
-    client.get<{ contents: Live[] }>({
-      endpoint: 'lives',
+export async function getCategories() {
+  const res = await client.get<ListResponse<Category>>({
+    endpoint: "categories",
+    queries: { limit: 20 },
+  });
+  return res.contents;
+}
+
+/**
+ * 前後の記事。公開日で挟み撃ちして1件ずつ取る。
+ * 一覧を全件持ってくるより負荷が軽い。
+ */
+export async function getAdjacentArticles(publishedAt: string) {
+  const [newer, older] = await Promise.all([
+    client.get<ListResponse<Article>>({
+      endpoint: "miscellany",
       queries: {
-        filters: `date[greater_than]${today}[and]isPublished[equals]true`,
-        orders: 'date',
+        limit: 1,
+        orders: "publishedAt",
+        filters: `publishedAt[greater_than]${publishedAt}`,
+        fields: "id,title",
       },
     }),
-    client.get<{ contents: Live[] }>({
-      endpoint: 'lives',
+    client.get<ListResponse<Article>>({
+      endpoint: "miscellany",
       queries: {
-        filters: `date[less_than]${today}[and]isPublished[equals]true`,
-        orders: '-date',
+        limit: 1,
+        orders: "-publishedAt",
+        filters: `publishedAt[less_than]${publishedAt}`,
+        fields: "id,title",
       },
     }),
   ]);
-  
-  return { upcoming: upcoming.contents, past: past.contents };
+
+  return { prev: older.contents[0] ?? null, next: newer.contents[0] ?? null };
 }
 
-export async function getNextLive(): Promise<Live | null> {
-  const today = new Date().toISOString().split('T')[0];
-  const result = await client.get<{ contents: Live[] }>({
-    endpoint: 'lives',
+/** 同じカテゴリの新しい記事を、自分自身を除いて取得 */
+export async function getRelatedArticles(
+  categoryId: string,
+  excludeId: string,
+  limit = 3
+) {
+  const res = await client.get<ListResponse<Article>>({
+    endpoint: "miscellany",
     queries: {
-      filters: `date[greater_than]${today}[and]isPublished[equals]true`,
-      orders: 'date',
+      limit: limit + 1,
+      orders: "-publishedAt",
+      filters: `category[equals]${categoryId}`,
+      fields: "id,title,publishedAt,category",
+    },
+  });
+  return res.contents.filter((a) => a.id !== excludeId).slice(0, limit);
+}
+
+/** 直近の1件（サイドバー用）。予定がなければ null */
+export async function getNextEvent() {
+  const res = await client.get<ListResponse<Event>>({
+    endpoint: "events",
+    queries: {
       limit: 1,
+      orders: "date",
+      filters: `date[greater_than]${new Date().toISOString()}`,
     },
   });
-  return result.contents[0] || null;
+  return res.contents[0] ?? null;
 }
 
-export async function getArticles(options?: { limit?: number; offset?: number; categoryId?: string }) {
-  const queries: Record<string, unknown> = {
-    limit: options?.limit || 10,
-    offset: options?.offset || 0,
-  };
-  
-  // 限定公開記事を除外
-  let filters = 'limited[not_equals]true';
-  
-  if (options?.categoryId) {
-    filters = `category[equals]${options.categoryId}[and]limited[not_equals]true`;
-  }
-  
-  queries.filters = filters;
-  
-  return await client.get<{ contents: Article[]; totalCount: number }>({
-    endpoint: 'articles',
-    queries,
-  });
-}
-
-export async function getArticle(id: string): Promise<Article> {
-  return await client.get({
-    endpoint: 'articles',
-    contentId: id,
-  });
-}
-
-// 全記事取得（限定公開含む、静的パス生成用）
-export async function getAllArticles(): Promise<Article[]> {
-  const result = await client.get<{ contents: Article[] }>({
-    endpoint: 'articles',
-    queries: { limit: 100 },
-  });
-  return result.contents;
-}
-
-export async function getLatestArticles(limit = 3): Promise<Article[]> {
-  const result = await client.get<{ contents: Article[] }>({
-    endpoint: 'articles',
-    queries: { 
-      limit,
-      filters: 'limited[not_equals]true',
-    },
-  });
-  return result.contents;
-}
-
-export async function getCategories(): Promise<Category[]> {
-  const result = await client.get<{ contents: Category[] }>({
-    endpoint: 'categories',
-  });
-  return result.contents;
-}
-
-// 日付フォーマット
-export function formatDate(dateString: string, format: 'full' | 'short' = 'full'): string {
-  const date = new Date(dateString);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  
-  if (format === 'short') {
-    return `${month}.${day}`;
-  }
-  return `${year}.${month}.${day}`;
-}
-
-// 曜日取得
-export function getDayOfWeek(dateString: string): string {
-  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-  const date = new Date(dateString);
-  return days[date.getDay()];
+export async function getEvents() {
+  const now = new Date().toISOString();
+  const [upcoming, past] = await Promise.all([
+    client.get<ListResponse<Event>>({
+      endpoint: "events",
+      queries: { limit: 50, orders: "date", filters: `date[greater_than]${now}` },
+    }),
+    client.get<ListResponse<Event>>({
+      endpoint: "events",
+      queries: { limit: 50, orders: "-date", filters: `date[less_than]${now}` },
+    }),
+  ]);
+  return { upcoming: upcoming.contents, past: past.contents };
 }
