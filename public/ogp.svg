@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#F7F7F5"/>
+  <text x="591" y="352" text-anchor="middle"
+        font-family="Noto Serif JP, Noto Serif CJK JP, Hiragino Mincho ProN, Yu Mincho, serif"
+        font-weight="500" font-size="116" letter-spacing="18.5"
+        fill="#1B1E22">飲み物堂</text>
+  <rect x="552" y="406" width="96" height="3" fill="#04756B"/>
+  <rect x="0"       y="615" width="171.43" height="15" fill="#2C6A1E"/>
+  <rect x="171.43"  y="615" width="171.43" height="15" fill="#96650A"/>
+  <rect x="342.86"  y="615" width="171.43" height="15" fill="#A34A0C"/>
+  <rect x="514.29"  y="615" width="171.43" height="15" fill="#A82420"/>
+  <rect x="685.71"  y="615" width="171.43" height="15" fill="#912A62"/>
+  <rect x="857.14"  y="615" width="171.43" height="15" fill="#2A4C96"/>
+  <rect x="1028.57" y="615" width="171.43" height="15" fill="#04756B"/>
+</svg>
