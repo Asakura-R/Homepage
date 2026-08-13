@@ -505,7 +505,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .adjacent-title { margin: 0; font-size: 13px; line-height: 1.6; color: var(--text); }
 
-.related { margin-top: 40px; max-width: var(--content-w); }
+.related { margin-top: 40px; max-width: var(--content-w); margin-inline: auto;}
 
 .related-head {
   display: flex;
