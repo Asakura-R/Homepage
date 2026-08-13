@@ -53,11 +53,11 @@ export type Category = {
 export type Article = {
   id: string;
   title: string;
-  body: string;
-  category?: Category;
-  publishedAt?: string;
-  revisedAt?: string;
-  createdAt: string;
+  content: string;
+  excerpt: string;
+  publishedAt: string;
+   limited: boolean;
+
 };
 
 export type Event = {
