@@ -29,7 +29,7 @@
 
   /* 寸法 */
   --sidebar-w:     230px;
-  --content-w:     720px;
+  --content-w:     660px;
   --page-max:      1360px;
   --header-h:      57px;
 }
@@ -312,7 +312,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    記事ページ
    -------------------------------------------------------------------------- */
 
-.article { max-width: var(--content-w); }
+.article { max-width: var(--content-w); margin-inline: auto; }
 
 .article-header { margin-bottom: 28px; }
 
@@ -339,12 +339,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    本文（microCMS のリッチエディタ出力に当てる）
    -------------------------------------------------------------------------- */
 
-.prose { font-size: 16px; line-height: 2.0; color: var(--text); }
+.prose { font-size: 18px; line-height: 1.9; color: var(--text); }
 
 .prose > *:first-child { margin-top: 0; }
 .prose > *:last-child  { margin-bottom: 0; }
 
-.prose p { margin: 0 0 1.5em; }
+.prose p { margin: 0 0 1.4em; }
 
 .prose h2 {
   margin: 2.2em 0 0.9em;
