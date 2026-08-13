@@ -28,7 +28,7 @@
   --category:      var(--muted);
 
   /* 寸法 */
-  --sidebar-w:     230px;
+  --sidebar-w:     300px;
   --content-w:     660px;
   --page-max:      1360px;
   --header-h:      57px;
