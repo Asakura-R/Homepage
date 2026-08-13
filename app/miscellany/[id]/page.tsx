@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const article = await getArticle(id);
-    const description = excerptOf(article.body, 100);
+    const description = excerptOf(article.content, 100);
     return {
       title: article.title,
       description,
