@@ -113,7 +113,17 @@ blue
 | `ogImage` | SNS共有画像。未設定なら `/public/ogp.png` |
 | `profileImage` | 宣材写真。未設定なら `/public/avatar.png` |
 
-`profile` API は現在使っていません。ABOUTページに経歴などを載せたくなったら追加できます。
+### profile
+
+ABOUTページの中身です。
+
+| フィールドID | 使い道 |
+|---|---|
+| `catchphrase` | 名前の横に、ティールの罫を添えて大きめに表示 |
+| `introduction` | 自己紹介文。リッチエディタなので見出しや強調もそのまま反映される |
+| `biograpy` | 経歴。繰り返しフィールド。年と内容の2列で並ぶ |
+
+`biograpy` の中のカスタムフィールドは、フィールドIDが `year` / `event` のような一般的な名前であれば自動で認識します。認識できない場合は、その項目の文字列を上から順に「年」「内容」として扱います。意図通りに出ないときは `lib/format.ts` の `YEAR_KEYS` と `BODY_KEYS` に実際のフィールドIDを足してください。
 
 ---
 

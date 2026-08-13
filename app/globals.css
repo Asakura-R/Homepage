@@ -30,7 +30,7 @@
   /* 寸法 */
   --sidebar-w:     230px;
   --content-w:     640px;
-  --page-max:      1360px;
+  --page-max:      1120px;
   --header-h:      57px;
 }
 
@@ -547,8 +547,36 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .profile-photo { width: 170px; flex-shrink: 0; border: 0.5px solid var(--rule); }
 .profile-name  { margin: 0 0 4px; font-size: 24px; font-weight: 500; color: var(--heading); }
-.profile-en    { margin: 0 0 18px; font-size: 11px; letter-spacing: 0.18em; color: var(--muted); }
-.profile p     { margin: 0 0 1.2em; font-size: 15.5px; line-height: 2.0; }
+.profile-en    { margin: 0 0 16px; font-size: 11px; letter-spacing: 0.18em; color: var(--muted); }
+
+/* 肩書き。名前の下に小さく置く */
+.profile-label {
+  margin: 0 0 14px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--sub);
+}
+
+/* キャッチコピー。プロフィールの中で唯一大きく見せる一行 */
+.profile-catch {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--accent);
+  font-size: 17px;
+  line-height: 1.9;
+  color: var(--heading);
+  white-space: pre-line;   /* テキストエリアの改行を活かす */
+}
+
+/* 自己紹介文。写真の下に本文幅で流す */
+.profile-intro { margin-bottom: 30px; }
+
+/* 固定ページ内の区切り */
+.page-rule {
+  border: none;
+  border-top: 0.5px solid var(--rule);
+  margin: 0 0 26px;
+}
 
 .page-body h2 {
   margin: 0 0 16px;

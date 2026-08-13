@@ -10,6 +10,7 @@ export const ENDPOINTS = {
   categories: "categories",
   events: "lives",
   settings: "settings",
+  profile: "profile",
 } as const;
 
 /* --------------------------------------------------------------------------
@@ -92,6 +93,29 @@ export type Settings = {
   instagramUrl?: string;
   ogImage?: MicroCMSImage;
   profileImage?: MicroCMSImage;
+};
+
+/**
+ * 経歴の1件。
+ * biograpy は繰り返しフィールドなので、中のカスタムフィールドの
+ * フィールドIDが確定するまで、よくある名前を広めに受けておく。
+ */
+export type BiographyItem = {
+  fieldId?: string;
+  year?: string;
+  date?: string;
+  title?: string;
+  event?: string;
+  text?: string;
+  description?: string;
+  content?: string;
+  [key: string]: unknown;
+};
+
+export type Profile = {
+  catchphrase: string;
+  introduction: string;
+  biograpy?: BiographyItem[];
 };
 
 type ListResponse<T> = {
@@ -305,5 +329,26 @@ export async function getSettings(): Promise<Settings> {
       console.error("サイト設定の取得に失敗しました", e);
     }
     return FALLBACK_SETTINGS;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   プロフィール（profile）
+   -------------------------------------------------------------------------- */
+
+export async function getProfile(): Promise<Profile | null> {
+  try {
+    return await client.getObject<Profile>({ endpoint: ENDPOINTS.profile });
+  } catch {
+    try {
+      const res = await client.get<ListResponse<Profile>>({
+        endpoint: ENDPOINTS.profile,
+        queries: { limit: 1 },
+      });
+      return res.contents[0] ?? null;
+    } catch (e) {
+      console.error("プロフィールの取得に失敗しました", e);
+      return null;
+    }
   }
 }

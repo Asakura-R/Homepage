@@ -1,4 +1,4 @@
-import type { Article, Category, CategoryColorKey, Event, Settings } from "./microcms";
+import type { Article, BiographyItem, Category, CategoryColorKey, Event, Settings } from "./microcms";
 
 /* --------------------------------------------------------------------------
    カテゴリ色
@@ -142,4 +142,52 @@ export function snsLinks(settings: Settings) {
     settings.twitterUrl && { label: "X", href: settings.twitterUrl },
     settings.instagramUrl && { label: "Instagram", href: settings.instagramUrl },
   ].filter(Boolean) as { label: string; href: string }[];
+}
+
+/* --------------------------------------------------------------------------
+   経歴（biograpy の繰り返しフィールド）
+
+   中のカスタムフィールドのIDが環境によって違うので、
+   「年」らしきものと「内容」らしきものを名前で拾う。
+   どちらも見つからなければ、最初に現れた文字列を順に使う。
+   -------------------------------------------------------------------------- */
+
+const YEAR_KEYS = ["year", "date", "period", "when"];
+const BODY_KEYS = ["event", "title", "text", "content", "description", "detail", "body"];
+
+function pick(item: BiographyItem, keys: string[]) {
+  for (const k of keys) {
+    const v = item[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return "";
+}
+
+/** 想定外のフィールドIDだったとき用に、文字列の値を順に拾う */
+function stringValues(item: BiographyItem) {
+  return Object.entries(item)
+    .filter(([k, v]) => k !== "fieldId" && typeof v === "string" && v.trim())
+    .map(([, v]) => (v as string).trim());
+}
+
+export function normalizeBiography(items?: BiographyItem[]) {
+  if (!items?.length) return [];
+
+  return items.map((item) => {
+    let year = pick(item, YEAR_KEYS);
+    let body = pick(item, BODY_KEYS);
+
+    if (!year && !body) {
+      const [first, second] = stringValues(item);
+      year = first ?? "";
+      body = second ?? "";
+    } else if (!body) {
+      body = stringValues(item).find((v) => v !== year) ?? "";
+    }
+
+    // 日時型で入っている場合は年だけ取り出す
+    if (/^\d{4}-\d{2}-\d{2}/.test(year)) year = year.slice(0, 4);
+
+    return { year, body };
+  }).filter((r) => r.year || r.body);
 }
