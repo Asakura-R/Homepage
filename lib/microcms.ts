@@ -31,6 +31,12 @@ export type CategoryColorKey =
   | "magenta"
   | "blue";
 
+export const ENDPOINTS = {
+  articles: Endpoint.articles,
+  categories: Endpoint.categories,
+  events: Endpoint.lives,
+} as const;
+
 export type Category = {
   id: string;
   name: string;
