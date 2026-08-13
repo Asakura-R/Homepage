@@ -32,9 +32,9 @@ export type CategoryColorKey =
   | "blue";
 
 export const ENDPOINTS = {
-  articles:ENDPOINTS.articles,
-  categories:ENDPOINTS.categories,
-  events:ENDPOINTS.lives,
+  articles: ENDPOINTS.articles,
+  categories: ENDPOINTS.categories,
+  events: ENDPOINTS.lives,
 } as const;
 
 export type Category = {
