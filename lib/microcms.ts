@@ -148,18 +148,24 @@ export async function getRelatedArticles(
 }
 
 /** 直近の1件（サイドバー用）。予定がなければ null */
-export async function getNextEvent() {
-  const res = await client.get<ListResponse<Event>>({
-    endpoint: "events",
-    queries: {
-      limit: 1,
-      orders: "date",
-      filters: `date[greater_than]${new Date().toISOString()}`,
-    },
-  });
-  return res.contents[0] ?? null;
+export async function getEvents() {
+  const now = new Date().toISOString();
+  try {
+    const [upcoming, past] = await Promise.all([
+      client.get<ListResponse<Event>>({
+        endpoint: ENDPOINTS.lives,
+        queries: { limit: 50, orders: "date", filters: `date[greater_than]${now}` },
+      }),
+      client.get<ListResponse<Event>>({
+        endpoint: ENDPOINTS.lives,
+        queries: { limit: 50, orders: "-date", filters: `date[less_than]${now}` },
+      }),
+    ]);
+    return { upcoming: upcoming.contents, past: past.contents };
+  } catch {
+    return { upcoming: [], past: [] };
+  }
 }
-
 export async function getEvents() {
   const now = new Date().toISOString();
   const [upcoming, past] = await Promise.all([
