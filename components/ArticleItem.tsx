@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { Article } from "@/lib/microcms";
-import { categoryVars, excerptOf, formatDate, swatchOf } from "@/lib/format";
+import { articleDate, categoryVars, excerptOf, formatDate } from "@/lib/format";
 
 export function ArticleItem({ article }: { article: Article }) {
-  const date = article.publishedAt ?? article.createdAt;
+  const date = articleDate(article);
 
   return (
     <li className="article-item" style={categoryVars(article.category)}>
@@ -17,7 +17,7 @@ export function ArticleItem({ article }: { article: Article }) {
           )}
         </div>
         <h2>{article.title}</h2>
-        <p className="article-excerpt">{excerptOf(article.body)}</p>
+        <p className="article-excerpt">{excerptOf(article)}</p>
       </Link>
     </li>
   );

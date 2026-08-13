@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Sidebar } from "@/components/Sidebar";
 import { getEvents } from "@/lib/microcms";
-import { formatEventDate } from "@/lib/format";
+import { eventDetailLine, formatEventDate } from "@/lib/format";
 
 export const revalidate = 60;
 export const metadata: Metadata = { title: "イベント情報" };
@@ -29,6 +29,7 @@ export default async function EventPage() {
             <div style={{ marginBottom: 34 }}>
               {upcoming.map((e) => {
                 const d = formatEventDate(e.date);
+                const detail = eventDetailLine(e);
                 return (
                   <div className="event-row" key={e.id}>
                     <div>
@@ -37,10 +38,11 @@ export default async function EventPage() {
                     </div>
                     <div>
                       <h3>{e.title}</h3>
-                      {e.detail && <p className="detail">{e.detail}</p>}
-                      {e.reserveUrl && (
+                      {detail && <p className="detail">{detail}</p>}
+                      {e.note && <p className="detail">{e.note}</p>}
+                      {e.ticketUrl && (
                         <a
-                          href={e.reserveUrl}
+                          href={e.ticketUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-link"

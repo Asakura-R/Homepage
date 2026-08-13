@@ -9,9 +9,10 @@ import {
   getRelatedArticles,
 } from "@/lib/microcms";
 import {
+  articleDate,
   categoryVars,
+  descriptionOf,
   enhanceBody,
-  excerptOf,
   formatDate,
 } from "@/lib/format";
 
@@ -33,11 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const article = await getArticle(id);
-    const description = excerptOf(article.content, 100);
+    const description = descriptionOf(article);
     return {
       title: article.title,
       description,
       openGraph: { title: article.title, description, type: "article" },
+      // 限定公開の記事は検索避け
+      robots: article.limited ? { index: false, follow: false } : undefined,
     };
   } catch {
     return { title: "記事が見つかりません" };
@@ -51,7 +54,7 @@ export default async function ArticlePage({ params, searchParams }: Props) {
   const article = await getArticle(id, draftKey).catch(() => null);
   if (!article) notFound();
 
-  const date = article.publishedAt ?? article.createdAt;
+  const date = articleDate(article);
 
   const [adjacent, related] = await Promise.all([
     getAdjacentArticles(date),
@@ -83,7 +86,7 @@ export default async function ArticlePage({ params, searchParams }: Props) {
 
           <div
             className="prose"
-            dangerouslySetInnerHTML={{ __html: enhanceBody(article.body) }}
+            dangerouslySetInnerHTML={{ __html: enhanceBody(article.content) }}
           />
 
           <nav className="adjacent-nav" aria-label="前後の記事">
@@ -117,14 +120,14 @@ export default async function ArticlePage({ params, searchParams }: Props) {
             {related.map((a) => (
               <Link key={a.id} href={`/miscellany/${a.id}`}>
                 <div className="related-item">
-                  <p>{formatDate(a.publishedAt ?? a.createdAt)}</p>
+                  <p>{formatDate(articleDate(a))}</p>
                   <h3>{a.title}</h3>
                 </div>
               </Link>
             ))}
 
             <p style={{ marginTop: 16 }}>
-              <Link href={`/category/${article.category.id}`} className="text-link">
+              <Link href={`/category/${article.category.slug}`} className="text-link">
                 {article.category.name}の記事をすべて見る
               </Link>
             </p>

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Noto_Serif_JP } from "next/font/google";
 import { Header } from "@/components/Header";
-import { getCategories } from "@/lib/microcms";
+import { getCategories, getSettings } from "@/lib/microcms";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-/* 本文と見出しで使うのは 400 / 500 / 700 の3つだけ。
+/* 使うのは 400 / 500 / 700 の3つだけ。
    9ウェイト全部読み込むと数MBになる。 */
 const notoSerif = Noto_Serif_JP({
   weight: ["400", "500", "700"],
@@ -14,34 +14,39 @@ const notoSerif = Noto_Serif_JP({
   variable: "--font-serif",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
-  title: { default: site.name, template: `%s｜${site.name}` },
-  description: site.description,
-  openGraph: {
-    type: "website",
-    siteName: site.name,
-    images: [{ url: site.ogImage, width: 1200, height: 630 }],
-  },
-  twitter: { card: "summary_large_image" },
-  icons: { icon: "/favicon.svg", apple: "/apple-touch-icon.png" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings();
+  const ogImage = settings.ogImage?.url ?? site.fallbackOgImage;
+
+  return {
+    metadataBase: new URL(site.url),
+    title: { default: settings.siteName, template: `%s｜${settings.siteName}` },
+    description: settings.siteDescription,
+    openGraph: {
+      type: "website",
+      siteName: settings.siteName,
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+    },
+    twitter: { card: "summary_large_image" },
+    icons: { icon: "/favicon.svg", apple: "/apple-touch-icon.png" },
+  };
+}
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const categories = await getCategories();
+  const [categories, settings] = await Promise.all([getCategories(), getSettings()]);
 
   return (
     <html lang="ja" className={notoSerif.variable}>
       <body style={{ fontFamily: "var(--font-serif), serif" }}>
         <div className="page">
-          <Header categories={categories} />
+          <Header categories={categories} settings={settings} />
           {children}
           <footer className="site-footer">
-            © {new Date().getFullYear()} {site.name}
+            © {new Date().getFullYear()} {settings.siteName}
           </footer>
         </div>
       </body>

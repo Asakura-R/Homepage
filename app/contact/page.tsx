@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import { Sidebar } from "@/components/Sidebar";
+import { getSettings } from "@/lib/microcms";
+import { snsLinks } from "@/lib/format";
 import { site } from "@/lib/site";
 
+export const revalidate = 60;
 export const metadata: Metadata = { title: "お問い合わせ" };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const settings = await getSettings();
+  const sns = snsLinks(settings);
+
   return (
     <div className="body-grid">
       <Sidebar />
@@ -59,16 +65,19 @@ export default function ContactPage() {
             </button>
           </form>
 
-          <hr style={{ border: "none", borderTop: "0.5px solid var(--rule)", margin: "30px 0 18px" }} />
-
-          <p style={{ margin: "0 0 8px", fontSize: 14 }}>SNSのDMでも受け付けています。</p>
-          <div className="sns-links" style={{ fontSize: 13 }}>
-            {site.sns.map((s) => (
-              <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer">
-                {s.label}
-              </a>
-            ))}
-          </div>
+          {sns.length > 0 && (
+            <>
+              <hr style={{ border: "none", borderTop: "0.5px solid var(--rule)", margin: "30px 0 18px" }} />
+              <p style={{ margin: "0 0 8px", fontSize: 14 }}>SNSのDMでも受け付けています。</p>
+              <div className="sns-links" style={{ fontSize: 13 }}>
+                {sns.map((s) => (
+                  <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer">
+                    {s.label}
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

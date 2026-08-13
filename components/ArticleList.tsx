@@ -11,6 +11,7 @@ const AUTO_LOAD_LIMIT = 2;
 type Props = {
   initialArticles: Article[];
   totalCount: number;
+  /** カテゴリ絞り込み時の microCMS 内部ID */
   categoryId?: string;
 };
 
