@@ -79,14 +79,14 @@ export const ARTICLES_PER_PAGE = 10;
 
 export async function getArticles(queries?: MicroCMSQueries) {
   return client.get<ListResponse<Article>>({
-    endpoint: "miscellany",
+    endpoint: "articles",
     queries: { limit: ARTICLES_PER_PAGE, orders: "-publishedAt", ...queries },
   });
 }
 
 export async function getArticle(id: string, draftKey?: string) {
   return client.getListDetail<Article>({
-    endpoint: "miscellany",
+    endpoint: "articles",
     contentId: id,
     queries: draftKey ? { draftKey } : undefined,
   });
