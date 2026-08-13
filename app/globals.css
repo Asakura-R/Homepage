@@ -109,6 +109,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   display: flex;
   align-items: center;
   justify-content: space-between;
+  max-width: none;
+  padding-inline: max(28px, calc((100vw - var(--page-max)) / 2 + 28px));
   padding: 16px 28px;
   border-bottom: 0.5px solid var(--rule-strong);
 }
@@ -676,6 +678,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .site-footer {
   padding: 13px 28px;
   border-top: 0.5px solid var(--rule-strong);
+  max-width: none;
+  padding-inline: max(28px, calc((100vw - var(--page-max)) / 2 + 28px));
   text-align: center;
   font-size: 10.5px;
   letter-spacing: 0.1em;
