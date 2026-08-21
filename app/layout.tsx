@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Serif_JP } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Header } from "@/components/Header";
 import { getCategories, getSettings } from "@/lib/microcms";
 import { site } from "@/lib/site";
@@ -49,6 +51,10 @@ export default async function RootLayout({
             © {new Date().getFullYear()} {settings.siteName}
           </footer>
         </div>
+
+        {/* Cookie を使わない計測。同意バナーは不要 */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
