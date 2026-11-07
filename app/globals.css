@@ -216,7 +216,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    セクション見出し（版面を区切る罫）
    -------------------------------------------------------------------------- */
 
- 
 .section-head {
   display: flex;
   align-items: baseline;
@@ -224,7 +223,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   padding-bottom: 11px;
   border-bottom: 1px solid var(--rule-strong);
 }
- 
+
 .section-head h1,
 .section-head h2 {
   margin: 0;
@@ -233,9 +232,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   letter-spacing: 0.22em;
   color: var(--sub);
 }
- 
-.section-count { font-size: 11px; color: var(--muted); }
 
+.section-count { font-size: 11px; color: var(--muted); }
 
 /* --------------------------------------------------------------------------
    記事一覧
@@ -486,7 +484,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    分岐（読者の選択で展開が変わる文章）
    -------------------------------------------------------------------------- */
 
-/* 本文の流れの中に、上下の罫で区切った囲みとして置く */
+/* 本文の流れの中に置く。区切り線は付けない（必要なら記事側で水平線を入れる） */
 .branch {
   margin: 2.4em 0;
 }
@@ -571,20 +569,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .branch-end { margin-top: 1.8em; text-align: center; }
 
 .prose .branch-end-mark {
-  display: flex;
-  align-items: center;
-  gap: 14px;
   margin: 0 0 16px;
   font-size: 11px;
   letter-spacing: 0.3em;
   color: var(--muted);
-}
-
-.branch-end-mark::before,
-.branch-end-mark::after {
-  content: "";
-  flex: 1;
-  border-top: 0.5px solid var(--rule);
 }
 
 .branch-end-actions {
@@ -622,6 +610,66 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 @media (max-width: 820px) {
   .branch-choices button { font-size: 15px; padding: 10px 14px; }
+}
+
+/* --------------------------------------------------------------------------
+   下書きプレビューの帯
+   -------------------------------------------------------------------------- */
+
+.preview-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  max-width: var(--content-w);
+  margin: 0 0 24px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--sub);
+  background: var(--surface);
+  border: 0.5px solid var(--accent);
+  border-left: 3px solid var(--accent);
+}
+
+.preview-banner-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+}
+
+/* プレビューが開けないときの案内 */
+.preview-help p { margin: 0 0 16px; font-size: 15px; line-height: 2; }
+
+.preview-received {
+  margin: 0 0 22px;
+  padding: 12px 16px;
+  font-size: 13px;
+  background: var(--surface);
+  border: 0.5px solid var(--rule-strong);
+}
+
+.preview-help .preview-received-label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.preview-received dl { margin: 0; }
+.preview-received dl > div { display: flex; gap: 12px; padding: 2px 0; }
+.preview-received dt { min-width: 7em; color: var(--muted); }
+.preview-received dd { margin: 0; word-break: break-all; }
+
+.preview-url {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: var(--surface);
+  border: 0.5px solid var(--rule-strong);
 }
 
 /* --------------------------------------------------------------------------
