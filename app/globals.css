@@ -28,9 +28,9 @@
   --category:      var(--muted);
 
   /* 寸法 */
-  --sidebar-w:     300px;
-  --content-w:     660px;
-  --page-max:      1360px;
+  --sidebar-w:     230px;
+  --content-w:     640px;
+  --page-max:      1120px;
   --header-h:      57px;
 }
 
@@ -109,8 +109,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   display: flex;
   align-items: center;
   justify-content: space-between;
-   max-width: none;
-  padding-inline: max(28px, calc((100vw - var(--page-max)) / 2 + 28px));
   padding: 16px 28px;
   border-bottom: 0.5px solid var(--rule-strong);
 }
@@ -314,7 +312,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    記事ページ
    -------------------------------------------------------------------------- */
 
-.article { max-width: var(--content-w); margin-inline: auto; }
+.article { max-width: var(--content-w); }
 
 .article-header { margin-bottom: 28px; }
 
@@ -341,12 +339,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    本文（microCMS のリッチエディタ出力に当てる）
    -------------------------------------------------------------------------- */
 
-.prose { font-size: 18px; line-height: 1.9; color: var(--text); }
+.prose { font-size: 16px; line-height: 2.0; color: var(--text); }
 
 .prose > *:first-child { margin-top: 0; }
 .prose > *:last-child  { margin-bottom: 0; }
 
-.prose p { margin: 0 0 1.4em; }
+.prose p { margin: 0 0 1.5em; }
 
 .prose h2 {
   margin: 2.2em 0 0.9em;
@@ -483,6 +481,151 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 
 /* --------------------------------------------------------------------------
+   分岐（読者の選択で展開が変わる文章）
+   -------------------------------------------------------------------------- */
+
+/* 本文の流れの中に、上下の罫で区切った囲みとして置く */
+.branch {
+  margin: 2.4em 0;
+  padding: 1.4em 0 1.3em;
+  border-top: 0.5px solid var(--rule-strong);
+  border-bottom: 0.5px solid var(--rule-strong);
+}
+
+.branch-label {
+  margin: 0 0 1.3em !important;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+}
+
+/* 選んだ直後の場面は、すっと浮かび上がるように出す */
+.branch-scene:last-child { animation: branch-in 0.35s ease-out; }
+.branch-scene:focus { outline: none; }
+
+@keyframes branch-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 一文ずつ改行する書き方をそのまま活かす */
+.prose .branch-text { white-space: pre-line; margin: 0 0 1.2em; }
+
+/* 通り過ぎた場面に残す「選んだもの」 */
+.prose .branch-trail {
+  margin: 0 0 1.8em;
+  padding-left: 12px;
+  border-left: 2px solid var(--rule-quote);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.branch-trail::before { content: "→ "; }
+
+/* 選択肢。押せるものなので機能色（ティール）で反応させる */
+.prose .branch-choices {
+  list-style: none;
+  margin: 1.5em 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prose .branch-choices > li { margin: 0; padding: 0; }
+.prose .branch-choices > li::before { content: none; }
+
+.branch-choices button {
+  width: 100%;
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--heading);
+  background: var(--surface);
+  border: 0.5px solid var(--rule-strong);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.branch-choices button::before {
+  content: "→";
+  margin-right: 10px;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.branch-choices button:hover { border-color: var(--accent); color: var(--accent); }
+.branch-choices button:hover::before { color: var(--accent); }
+
+.branch-back {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 0.5px solid var(--rule-strong);
+  padding: 0 0 1px;
+}
+
+.branch-back:hover { color: var(--accent); border-color: var(--accent); }
+
+/* 結末 */
+.branch-end { margin-top: 1.8em; text-align: center; }
+
+.prose .branch-end-mark {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 16px;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--muted);
+}
+
+.branch-end-mark::before,
+.branch-end-mark::after {
+  content: "";
+  flex: 1;
+  border-top: 0.5px solid var(--rule);
+}
+
+.branch-end-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.branch-end-actions button {
+  padding: 7px 22px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--sub);
+  background: var(--surface);
+  border: 0.5px solid var(--rule-strong);
+}
+
+.branch-end-actions button:hover { color: var(--accent); border-color: var(--accent); }
+
+/* 下書きプレビューでだけ出る、分岐の書き間違いの一覧 */
+.branch-issues {
+  margin: 0 0 1.4em;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text);
+  background: #FBF1F0;
+  border: 1px solid #A82420;
+}
+
+.prose .branch-issues p { margin: 0 0 6px; font-weight: 500; color: #A82420; }
+.prose .branch-issues ul { margin: 0; }
+.branch-issues .is-error { color: #A82420; }
+
+@media (max-width: 820px) {
+  .branch-choices button { font-size: 15px; padding: 10px 14px; }
+}
+
+/* --------------------------------------------------------------------------
    前後記事・関連記事
    -------------------------------------------------------------------------- */
 
@@ -507,7 +650,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .adjacent-title { margin: 0; font-size: 13px; line-height: 1.6; color: var(--text); }
 
-.related { margin-top: 40px; max-width: var(--content-w); margin-inline: auto;}
+.related { margin-top: 40px; max-width: var(--content-w); }
 
 .related-head {
   display: flex;
@@ -676,8 +819,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    -------------------------------------------------------------------------- */
 
 .site-footer {
-   max-width: none;
-  padding-inline: max(28px, calc((100vw - var(--page-max)) / 2 + 28px));
   padding: 13px 28px;
   border-top: 0.5px solid var(--rule-strong);
   text-align: center;
