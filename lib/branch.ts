@@ -1,10 +1,12 @@
+import { inlineToPlain, parseInline, safeImageSrc } from "./branchInline";
+
 /* --------------------------------------------------------------------------
    分岐ストーリーの記法を読み取る
 
    microCMS のテキストエリアに、次のように書く。
 
      # はじまり
-     鞄を受け取ったら、妙に重い。
+     鞄を受け取ったら、**妙に重い**。
      -> 中身を聞く : 聞く
      -> 黙って持ち上げる : 持つ
 
@@ -13,24 +15,38 @@
      -> 米かと聞き返す : 米
 
      # 米
-     米だった。今は高いので、怒るに怒れない。
+     米だった。{小:今は高いので、怒るに怒れない。}
 
-   - 「#」で始まる行が場面の名前。最初の場面から読み始める
-   - 「->」で始まる行が選択肢。「表示する文 : 行き先の場面名」
+   ■ 分岐の仕組み
+   - 「# 名前」（# は1つ）が場面の始まり。最初の場面から読み始める
+   - 「-> 表示する文 : 行き先の場面名」が選択肢
    - 選択肢のない場面が結末
+
+   ■ 場面の中で使える書き方（Markdown とほぼ同じ）
    - 空行で段落が分かれる。改行はそのまま改行として出る
-   - 「>」で始まる行は引用（地の文から離れた声）として出る
+   - > 文            引用
+   - ## 見出し        見出し（# が2つ以上。# 1つは場面の名前なので注意）
+   - ---             水平線
+   - - 項目 / 1. 項目  箇条書き / 番号付き
+   - ![説明](URL "キャプション")  画像（キャプションは省略できる）
+   - **太字** *斜体* [文字](URL) {大:文字} … 文中の記号は lib/branchInline.ts
 
    全角の「＃」「→」「：」「＞」でも書けるようにしてある。
    -------------------------------------------------------------------------- */
 
-export type BranchParagraph = { kind: "text" | "quote"; text: string };
+export type BranchNode =
+  | { kind: "text"; lines: string[] }
+  | { kind: "quote"; lines: string[] }
+  | { kind: "heading"; level: 2 | 3; text: string }
+  | { kind: "hr" }
+  | { kind: "list"; ordered: boolean; items: string[] }
+  | { kind: "image"; src: string; alt: string; caption?: string };
 
 export type BranchChoice = { label: string; target: string };
 
 export type BranchScene = {
   id: string;
-  paragraphs: BranchParagraph[];
+  nodes: BranchNode[];
   choices: BranchChoice[];
 };
 
@@ -43,12 +59,22 @@ export type BranchStory = {
   warnings: string[];
 };
 
-const SCENE_LINE = /^[#＃]\s*(.+)$/;
+/** # は1つだけ（## 以上は見出し） */
+const SCENE_LINE = /^[#＃](?![#＃])\s*(.+)$/;
+const HEADING_LINE = /^([#＃]{2,6})\s*(.+)$/;
 const CHOICE_LINE = /^(?:->|→|－＞)\s*(.+)$/;
 const QUOTE_LINE = /^[>＞]\s?(.*)$/;
+const HR_LINE = /^(?:-{3,}|\*{3,}|_{3,}|ー{3,}|―{2,})$/;
+const BULLET_LINE = /^[-*]\s+(.+)$/;
+const ORDERED_LINE = /^\d+[.．]\s+(.+)$/;
+const IMAGE_LINE = /^!\[([^\]]*)\]\(\s*(\S+?)(?:\s+["“”]([^"“”]*)["“”])?\s*\)$/;
 
 /** 本文より前に書かれた文章を受ける、名前のない最初の場面 */
 const IMPLICIT_START = "はじまり";
+
+type Buffer =
+  | { kind: "text" | "quote"; lines: string[] }
+  | { kind: "list"; ordered: boolean; items: string[] };
 
 export function parseBranch(source?: string): BranchStory {
   const errors: string[] = [];
@@ -61,13 +87,25 @@ export function parseBranch(source?: string): BranchStory {
   }
 
   let current: BranchScene | null = null;
-  let buffer: { kind: BranchParagraph["kind"]; lines: string[] } | null = null;
+  let buffer: Buffer | null = null;
+
+  const scene = () => current as unknown as BranchScene;
 
   const flush = () => {
-    if (current && buffer && buffer.lines.length) {
-      current.paragraphs.push({ kind: buffer.kind, text: buffer.lines.join("\n") });
+    const b = buffer as Buffer | null;
+    if (current && b) {
+      if (b.kind === "list") {
+        if (b.items.length) scene().nodes.push({ kind: "list", ordered: b.ordered, items: b.items });
+      } else if (b.lines.length) {
+        scene().nodes.push({ kind: b.kind, lines: b.lines });
+      }
     }
     buffer = null;
+  };
+
+  /** 文中の記号を確かめ、問題があれば行番号付きで警告に回す */
+  const check = (text: string, lineNo: number) => {
+    for (const issue of parseInline(text).issues) warnings.push(`${lineNo}行目：${issue}`);
   };
 
   const openScene = (id: string, lineNo: number) => {
@@ -75,10 +113,10 @@ export function parseBranch(source?: string): BranchStory {
     if (scenes[id]) {
       errors.push(`${lineNo}行目：場面「${id}」が2回定義されています。名前を変えてください`);
       // 後から書いたほうで上書きせず、別の場面として読み捨てる
-      current = { id, paragraphs: [], choices: [] };
+      current = { id, nodes: [], choices: [] };
       return;
     }
-    current = { id, paragraphs: [], choices: [] };
+    current = { id, nodes: [], choices: [] };
     scenes[id] = current;
     order.push(id);
   };
@@ -87,8 +125,7 @@ export function parseBranch(source?: string): BranchStory {
 
   lines.forEach((raw, i) => {
     const lineNo = i + 1;
-    const line = raw.trimEnd();
-    const trimmed = line.trim();
+    const trimmed = raw.trim();
 
     // 空行は段落の区切り
     if (!trimmed) {
@@ -96,15 +133,14 @@ export function parseBranch(source?: string): BranchStory {
       return;
     }
 
-    const scene = trimmed.match(SCENE_LINE);
-    if (scene) {
-      openScene(scene[1].trim(), lineNo);
+    const sceneLine = trimmed.match(SCENE_LINE);
+    if (sceneLine) {
+      openScene(sceneLine[1].trim(), lineNo);
       return;
     }
 
-    // 見出しより前に本文が書かれていたら、名前のない最初の場面として扱う
+    // 場面の名前より前に本文が書かれていたら、名前のない最初の場面として扱う
     if (!current) openScene(IMPLICIT_START, lineNo);
-    const sceneNow = current as unknown as BranchScene;
 
     const choice = trimmed.match(CHOICE_LINE);
     if (choice) {
@@ -122,23 +158,75 @@ export function parseBranch(source?: string): BranchStory {
         errors.push(`${lineNo}行目：選択肢の表示文か行き先が空です`);
         return;
       }
-      sceneNow.choices.push({ label, target });
+      check(label, lineNo);
+      scene().choices.push({ label, target });
       return;
     }
 
     // 選択肢のあとに本文が続いたら、書き間違いの可能性が高い
-    if (sceneNow.choices.length) {
-      warnings.push(`${lineNo}行目：場面「${sceneNow.id}」の選択肢より後ろに本文があります。選択肢の上に表示されます`);
+    if (scene().choices.length) {
+      warnings.push(`${lineNo}行目：場面「${scene().id}」の選択肢より後ろに本文があります。選択肢の上に表示されます`);
     }
 
+    // 見出し
+    const heading = trimmed.match(HEADING_LINE);
+    if (heading) {
+      flush();
+      const level = heading[1].length === 2 ? 2 : 3;
+      check(heading[2], lineNo);
+      scene().nodes.push({ kind: "heading", level, text: heading[2].trim() });
+      return;
+    }
+
+    // 水平線
+    if (HR_LINE.test(trimmed)) {
+      flush();
+      scene().nodes.push({ kind: "hr" });
+      return;
+    }
+
+    // 画像（1行まるごと）
+    const image = trimmed.match(IMAGE_LINE);
+    if (image) {
+      flush();
+      const src = safeImageSrc(image[2]);
+      if (!src) {
+        warnings.push(`${lineNo}行目：画像のURL「${image[2]}」は使えません。https:// で始まるURLにしてください（画像は表示されません）`);
+        return;
+      }
+      const caption = image[3]?.trim();
+      if (caption) check(caption, lineNo);
+      scene().nodes.push({ kind: "image", src, alt: image[1].trim(), caption: caption || undefined });
+      return;
+    }
+
+    // 箇条書き
+    const bullet = trimmed.match(BULLET_LINE);
+    const ordered = bullet ? null : trimmed.match(ORDERED_LINE);
+    if (bullet || ordered) {
+      const isOrdered = Boolean(ordered);
+      const item = (bullet ?? ordered)![1];
+      const b = buffer as Buffer | null;
+      if (!b || b.kind !== "list" || b.ordered !== isOrdered) {
+        flush();
+        buffer = { kind: "list", ordered: isOrdered, items: [] };
+      }
+      check(item, lineNo);
+      (buffer as unknown as { items: string[] }).items.push(item);
+      return;
+    }
+
+    // 地の文と引用
     const quote = trimmed.match(QUOTE_LINE);
-    const kind: BranchParagraph["kind"] = quote ? "quote" : "text";
+    const kind = quote ? "quote" : "text";
     const text = quote ? quote[1] : trimmed;
 
     // 種類が変わったら段落を切る（地の文と引用が混ざらないように）
-    if (buffer && (buffer as { kind: string }).kind !== kind) flush();
+    const b = buffer as Buffer | null;
+    if (b && b.kind !== kind) flush();
     if (!buffer) buffer = { kind, lines: [] };
-    (buffer as { lines: string[] }).lines.push(text);
+    check(text, lineNo);
+    (buffer as unknown as { lines: string[] }).lines.push(text);
   });
 
   flush();
@@ -148,12 +236,12 @@ export function parseBranch(source?: string): BranchStory {
   // 行き先の確認
   for (const id of order) {
     const s = scenes[id];
-    if (!s.paragraphs.length && !s.choices.length) {
+    if (!s.nodes.length && !s.choices.length) {
       warnings.push(`場面「${id}」に本文も選択肢もありません`);
     }
     for (const c of s.choices) {
       if (!scenes[c.target]) {
-        errors.push(`場面「${id}」の選択肢「${c.label}」の行き先「${c.target}」が見つかりません`);
+        errors.push(`場面「${id}」の選択肢「${plain(c.label)}」の行き先「${c.target}」が見つかりません`);
       }
     }
   }
@@ -182,10 +270,21 @@ export function parseBranch(source?: string): BranchStory {
   return { start, scenes, errors, warnings };
 }
 
-/** 一覧の抜粋用。最初の場面の本文だけを素の文字列で返す */
+/** 記号を取り除いた素の文字列 */
+export function plain(text: string) {
+  return inlineToPlain(parseInline(text).nodes);
+}
+
+/** 一覧の抜粋用。最初の場面の文章だけを素の文字列で返す */
 export function branchLeadText(source?: string) {
   const story = parseBranch(source);
   const first = story.scenes[story.start];
   if (!first) return "";
-  return first.paragraphs.map((p) => p.text).join(" ").replace(/\s+/g, " ").trim();
+  const parts: string[] = [];
+  for (const n of first.nodes) {
+    if (n.kind === "text" || n.kind === "quote") parts.push(...n.lines.map(plain));
+    else if (n.kind === "heading") parts.push(plain(n.text));
+    else if (n.kind === "list") parts.push(...n.items.map(plain));
+  }
+  return parts.join(" ").replace(/\s+/g, " ").trim();
 }
