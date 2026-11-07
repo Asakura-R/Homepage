@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArticleBody } from "@/components/ArticleBody";
 import { Sidebar } from "@/components/Sidebar";
 import {
   getAdjacentArticles,
@@ -12,7 +13,6 @@ import {
   articleDate,
   categoryVars,
   descriptionOf,
-  enhanceBody,
   formatDate,
 } from "@/lib/format";
 
@@ -84,10 +84,8 @@ export default async function ArticlePage({ params, searchParams }: Props) {
             <div className="article-rule" aria-hidden="true" />
           </header>
 
-          <div
-            className="prose"
-            dangerouslySetInnerHTML={{ __html: enhanceBody(article.content) }}
-          />
+          {/* 下書きプレビュー（draftKey 付き）のときだけ、分岐の書き間違いを表示する */}
+          <ArticleBody article={article} showIssues={Boolean(draftKey)} />
 
           <nav className="adjacent-nav" aria-label="前後の記事">
             <div className="prev">
