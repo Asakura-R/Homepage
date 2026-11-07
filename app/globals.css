@@ -216,6 +216,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    セクション見出し（版面を区切る罫）
    -------------------------------------------------------------------------- */
 
+ 
 .section-head {
   display: flex;
   align-items: baseline;
@@ -223,7 +224,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   padding-bottom: 11px;
   border-bottom: 1px solid var(--rule-strong);
 }
-
+ 
 .section-head h1,
 .section-head h2 {
   margin: 0;
@@ -232,8 +233,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   letter-spacing: 0.22em;
   color: var(--sub);
 }
-
+ 
 .section-count { font-size: 11px; color: var(--muted); }
+
 
 /* --------------------------------------------------------------------------
    記事一覧
@@ -487,9 +489,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* 本文の流れの中に、上下の罫で区切った囲みとして置く */
 .branch {
   margin: 2.4em 0;
-  padding: 1.4em 0 1.3em;
-  border-top: 0.5px solid var(--rule-strong);
-  border-bottom: 0.5px solid var(--rule-strong);
 }
 
 .branch-label {
