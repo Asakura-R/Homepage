@@ -59,7 +59,7 @@ export function BranchStory({ story }: { story: Story }) {
 
   return (
     <section className="branch" aria-label="選んで読み進める文章">
-      <p className="branch-label">選んで読む</p>
+      <p className="branch-label"></p>
 
       {path.map((step, i) => {
         const scene = story.scenes[step.scene];
