@@ -1,3 +1,4 @@
+import { branchLeadText } from "./branch";
 import type { Article, BiographyItem, Category, CategoryColorKey, Event, Settings } from "./microcms";
 
 /* --------------------------------------------------------------------------
@@ -120,16 +121,29 @@ function toPlainText(html?: string) {
  * microCMS で excerpt を書いていればそれを使い、
  * 空なら本文の冒頭から切り出す。
  */
-export function excerptOf(article: Pick<Article, "excerpt" | "content">, length = 120) {
+export function excerptOf(
+  article: Pick<Article, "excerpt" | "content" | "blocks">,
+  length = 120
+) {
   const manual = article.excerpt?.trim();
   if (manual) return manual;
 
-  const text = toPlainText(article.content);
+  // 本文 → 最初の本文ブロック → 最初の分岐の冒頭、の順に探す
+  let text = toPlainText(article.content);
+  if (!text && article.blocks) {
+    for (const b of article.blocks) {
+      text = b.fieldId === "textBlock" ? toPlainText(b.body) : branchLeadText(b.script);
+      if (text) break;
+    }
+  }
   return text.length > length ? text.slice(0, length) + "…" : text;
 }
 
 /** OGP の description 用。改行を潰して短く */
-export function descriptionOf(article: Pick<Article, "excerpt" | "content">, length = 100) {
+export function descriptionOf(
+  article: Pick<Article, "excerpt" | "content" | "blocks">,
+  length = 100
+) {
   return excerptOf(article, length).replace(/\n/g, " ");
 }
 

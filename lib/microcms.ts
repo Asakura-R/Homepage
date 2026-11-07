@@ -51,10 +51,30 @@ export type Category = {
   color?: CategoryColorKey[];
 };
 
+/* 本文ブロック（articles の blocks：繰り返しフィールド）
+   fieldId は microCMS のカスタムフィールドのID */
+
+export type TextBlock = {
+  fieldId: "textBlock";
+  /** リッチエディタ */
+  body?: string;
+};
+
+export type BranchBlock = {
+  fieldId: "branchBlock";
+  /** テキストエリア。書き方は lib/branch.ts の冒頭を参照 */
+  script?: string;
+};
+
+export type ArticleBlock = TextBlock | BranchBlock;
+
 export type Article = {
   id: string;
   title: string;
-  content: string;
+  /** 従来の本文。過去記事はここだけに入っている */
+  content?: string;
+  /** 分岐などを含む記事用。content の後ろに順番に表示される */
+  blocks?: ArticleBlock[];
   /** 手入力の抜粋。空なら本文から自動生成する */
   excerpt?: string;
   /** 限定公開。true の記事は一覧に出さない（URL直打ちでは読める） */
