@@ -104,7 +104,7 @@ export function BranchStory({ story }: { story: Story }) {
 
             {isLast && isEnding && (
               <div className="branch-end">
-                <p className="branch-end-mark">おわり</p>
+                <p className="branch-end-mark"></p>
                 <div className="branch-end-actions">
                   <button type="button" onClick={restart}>
                     最初から読む
