@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { BranchStory as Story } from "@/lib/branch";
+import { Fragment, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import type { BranchNode, BranchStory as Story } from "@/lib/branch";
+import { parseInline } from "@/lib/branchInline";
+import type { InlineNode } from "@/lib/branchInline";
 
 /**
  * 読者の選択で展開が変わる文章。
@@ -56,7 +59,7 @@ export function BranchStory({ story }: { story: Story }) {
 
   return (
     <section className="branch" aria-label="選んで読み進める文章">
-      <p className="branch-label"></p>
+      <p className="branch-label">選んで読む</p>
 
       {path.map((step, i) => {
         const scene = story.scenes[step.scene];
@@ -74,23 +77,15 @@ export function BranchStory({ story }: { story: Story }) {
             ref={isLast ? lastRef : undefined}
             tabIndex={isLast ? -1 : undefined}
           >
-            {scene.paragraphs.map((p, j) =>
-              p.kind === "quote" ? (
-                <blockquote key={j}>
-                  <p>{p.text}</p>
-                </blockquote>
-              ) : (
-                <p key={j} className="branch-text">
-                  {p.text}
-                </p>
-              )
-            )}
+            {scene.nodes.map((node, j) => (
+              <SceneNode key={j} node={node} />
+            ))}
 
             {/* 通り過ぎた場面には、選んだものだけを残す */}
             {!isLast && step.chosen && (
               <p className="branch-trail">
                 <span className="sr-only">選んだもの：</span>
-                {step.chosen}
+                <Inline text={step.chosen} links={false} />
               </p>
             )}
 
@@ -99,7 +94,8 @@ export function BranchStory({ story }: { story: Story }) {
                 {choices.map((c) => (
                   <li key={c.label + c.target}>
                     <button type="button" onClick={() => choose(c.label, c.target)}>
-                      {c.label}
+                      {/* ボタンの中にリンクは置けないので、リンクは文字だけにする */}
+                      <Inline text={c.label} links={false} />
                     </button>
                   </li>
                 ))}
@@ -108,7 +104,7 @@ export function BranchStory({ story }: { story: Story }) {
 
             {isLast && isEnding && (
               <div className="branch-end">
-                <p className="branch-end-mark"></p>
+                <p className="branch-end-mark">おわり</p>
                 <div className="branch-end-actions">
                   <button type="button" onClick={restart}>
                     最初から読む
@@ -132,4 +128,129 @@ export function BranchStory({ story }: { story: Story }) {
       })}
     </section>
   );
+}
+
+/* --------------------------------------------------------------------------
+   場面の中身
+   -------------------------------------------------------------------------- */
+
+function SceneNode({ node }: { node: BranchNode }) {
+  switch (node.kind) {
+    case "text":
+      return (
+        <p className="branch-text">
+          <Lines lines={node.lines} />
+        </p>
+      );
+
+    case "quote":
+      return (
+        <blockquote>
+          <p>
+            <Lines lines={node.lines} />
+          </p>
+        </blockquote>
+      );
+
+    case "heading": {
+      const Tag = node.level === 2 ? "h2" : "h3";
+      return (
+        <Tag>
+          <Inline text={node.text} />
+        </Tag>
+      );
+    }
+
+    case "hr":
+      return <hr />;
+
+    case "list": {
+      const Tag = node.ordered ? "ol" : "ul";
+      return (
+        <Tag>
+          {node.items.map((item, k) => (
+            <li key={k}>
+              <Inline text={item} />
+            </li>
+          ))}
+        </Tag>
+      );
+    }
+
+    case "image":
+      return (
+        <figure>
+          {/* microCMS 以外の画像も貼れるよう、Next.js の Image ではなく img を使う */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={node.src} alt={node.alt} loading="lazy" decoding="async" />
+          {node.caption && (
+            <figcaption>
+              <Inline text={node.caption} />
+            </figcaption>
+          )}
+        </figure>
+      );
+  }
+}
+
+/** 改行をそのまま改行として出す */
+function Lines({ lines }: { lines: string[] }) {
+  return (
+    <>
+      {lines.map((line, k) => (
+        <Fragment key={k}>
+          {k > 0 && <br />}
+          <Inline text={line} />
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   文中の記号
+   -------------------------------------------------------------------------- */
+
+const SIZE_CLASS = {
+  xs: "text-xs",
+  s: "text-s",
+  l: "text-l",
+  xl: "text-xl",
+  xxl: "text-xxl",
+} as const;
+
+function Inline({ text, links = true }: { text: string; links?: boolean }) {
+  return <>{renderInline(parseInline(text).nodes, links)}</>;
+}
+
+function renderInline(nodes: InlineNode[], links: boolean): ReactNode[] {
+  return nodes.map((n, k) => {
+    switch (n.t) {
+      case "text":
+        return <Fragment key={k}>{n.v}</Fragment>;
+      case "strong":
+        return <strong key={k}>{renderInline(n.c, links)}</strong>;
+      case "em":
+        return <em key={k}>{renderInline(n.c, links)}</em>;
+      case "size":
+        return (
+          <span key={k} className={SIZE_CLASS[n.size]}>
+            {renderInline(n.c, links)}
+          </span>
+        );
+      case "link": {
+        if (!links) return <Fragment key={k}>{renderInline(n.c, links)}</Fragment>;
+        const external = /^https?:\/\//i.test(n.href);
+        return (
+          <a
+            key={k}
+            href={n.href}
+            {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+          >
+            {renderInline(n.c, links)}
+          </a>
+        );
+      }
+    }
+  });
 }
