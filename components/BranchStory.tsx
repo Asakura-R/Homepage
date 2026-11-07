@@ -107,7 +107,7 @@ export function BranchStory({ story }: { story: Story }) {
                 <p className="branch-end-mark"></p>
                 <div className="branch-end-actions">
                   <button type="button" onClick={restart}>
-                    最初から読む
+                    最初から
                   </button>
                   {path.length > 1 && (
                     <button type="button" onClick={back}>
