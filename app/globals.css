@@ -364,6 +364,15 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .prose strong { font-weight: 700; color: var(--heading); }
 
+/* 本文中の一部だけ大きさを変える。
+   microCMS のカスタムclass と、分岐の {大:…} などの記号の両方で使う。
+   em 指定なので、PC・スマホそれぞれの本文の大きさに比例する */
+.prose .text-xs  { font-size: 0.75em; }
+.prose .text-s   { font-size: 0.875em; }
+.prose .text-l   { font-size: 1.25em; }
+.prose .text-xl  { font-size: 1.6em;  line-height: 1.5; }
+.prose .text-xxl { font-size: 2.2em;  line-height: 1.35; }
+
 .prose a {
   color: var(--accent);
   border-bottom: 0.5px solid var(--accent);
@@ -506,7 +515,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 
 /* 一文ずつ改行する書き方をそのまま活かす */
-.prose .branch-text { white-space: pre-line; margin: 0 0 1.2em; }
+.prose .branch-text { margin: 0 0 1.2em; }
 
 /* 通り過ぎた場面に残す「選んだもの」 */
 .prose .branch-trail {
