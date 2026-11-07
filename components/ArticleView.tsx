@@ -10,15 +10,17 @@ import { articleDate, categoryVars, formatDate } from "@/lib/format";
  * 公開ページ（/miscellany/[id]）と下書きプレビュー（/preview）の両方で使う。
  *
  * preview が true のとき
- * - 上部に「下書きプレビュー」の帯を出す
+ * - 上部に「下書きプレビュー」の帯を出す（previewNote で帯の文言を変えられる）
  * - 分岐の書き間違いを表示する
  */
 export async function ArticleView({
   article,
   preview = false,
+  previewNote = "この画面は本人確認用です。読者には公開されていません。",
 }: {
   article: Article;
   preview?: boolean;
+  previewNote?: string;
 }) {
   const date = articleDate(article);
 
@@ -39,7 +41,7 @@ export async function ArticleView({
         {preview && (
           <div className="preview-banner" role="status">
             <span className="preview-banner-label">下書きプレビュー</span>
-            <span>この画面は本人確認用です。読者には公開されていません。</span>
+            <span>{previewNote}</span>
           </div>
         )}
 
