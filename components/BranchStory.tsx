@@ -56,7 +56,7 @@ export function BranchStory({ story }: { story: Story }) {
 
   return (
     <section className="branch" aria-label="選んで読み進める文章">
-      <p className="branch-label">選んで読む</p>
+      <p className="branch-label"></p>
 
       {path.map((step, i) => {
         const scene = story.scenes[step.scene];
@@ -108,7 +108,7 @@ export function BranchStory({ story }: { story: Story }) {
 
             {isLast && isEnding && (
               <div className="branch-end">
-                <p className="branch-end-mark">おわり</p>
+                <p className="branch-end-mark"></p>
                 <div className="branch-end-actions">
                   <button type="button" onClick={restart}>
                     最初から読む
