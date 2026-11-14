@@ -585,15 +585,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .branch-back:hover { color: var(--accent); border-color: var(--accent); }
 
 /* 結末 */
-.branch-end { margin-top: 1.8em; text-align: center; }
-
-.prose .branch-end-mark {
-  margin: 0 0 16px;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  color: var(--muted);
-}
-
+.branch-end { margin-top: 2em; text-align: center; }
 .branch-end-actions {
   display: flex;
   flex-wrap: wrap;
