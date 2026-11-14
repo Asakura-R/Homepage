@@ -55,7 +55,14 @@ export function ArticleBody({
                   </ul>
                 </div>
               )}
-              {story.start && <BranchStory story={story} debug={showIssues} />}
+              {story.start && (
+                <BranchStory
+                  story={story}
+                  debug={showIssues}
+                  // 途中保存は公開ページだけ。プレビューで遊んだ記録が公開ページに出ないように
+                  saveKey={story.save && !showIssues ? `${article.id}:${i}` : undefined}
+                />
+              )}
             </div>
           );
         }

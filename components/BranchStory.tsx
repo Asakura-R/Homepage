@@ -2,12 +2,13 @@
 
 import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { choiceState, runScene } from "@/lib/branch";
-import type { BranchChoice, BranchLine, BranchStory as Story, SceneViewItem } from "@/lib/branch";
-import { applyEffects, valueOf } from "@/lib/branchLogic";
+import { advance, choiceState, firstPath, MAX_STEPS, picksOf, replay, retreat, runScene } from "@/lib/branch";
+import type { BranchChoice, BranchLine, BranchStep, BranchStory as Story, SceneViewItem } from "@/lib/branch";
+import { valueOf } from "@/lib/branchLogic";
 import type { Vars } from "@/lib/branchLogic";
 import { parseInline } from "@/lib/branchInline";
 import type { InlineNode } from "@/lib/branchInline";
+import { clearPicks, loadPicks, savePicks, SAVE_DAYS, sweepExpired } from "@/lib/branchSave";
 
 /**
  * 読者の選択で展開が変わる文章。
@@ -17,27 +18,28 @@ import type { InlineNode } from "@/lib/branchInline";
  *
  * フラグは「場面に入ったときの値」を1歩ごとに覚えておく。
  * 戻るときはその歩を捨てるだけで、フラグも選ぶ前の状態に戻る。
+ *
+ * saveKey があるとき（[save] を書いた分岐を公開ページで開いたとき）は、
+ * 選ぶたびに読者のブラウザへ記録し、次に開いたときは黙って続きを表示する。
  */
-
-/** 同じ場面を行き来する構成でも、際限なく伸びないようにする */
-const MAX_STEPS = 60;
-
-type Step = {
-  scene: string;
-  /** この場面に入ったときのフラグ */
-  enter: Vars;
-  /** この場面で選んだ選択肢の表示文（通り過ぎた場面にだけある） */
-  chosen?: string;
-};
 
 /** {=名前} を表示するときに使う、その時点のフラグ */
 const VarsContext = createContext<Vars>({});
 
-export function BranchStory({ story, debug = false }: { story: Story; debug?: boolean }) {
-  const first = (): Step[] => [{ scene: story.start, enter: {} }];
-  const [path, setPath] = useState<Step[]>(first);
+export function BranchStory({
+  story,
+  debug = false,
+  saveKey,
+}: {
+  story: Story;
+  debug?: boolean;
+  /** 途中保存の記録名。なければ保存しない */
+  saveKey?: string;
+}) {
+  const [path, setPath] = useState<BranchStep[]>(() => firstPath(story));
   const lastRef = useRef<HTMLDivElement>(null);
-  const mounted = useRef(false);
+  /** 読者が選んだ・戻ったときだけ、新しい場面へ視線を移す（続きを復元したときは動かさない） */
+  const moved = useRef(false);
 
   // 歩ごとに「表示するもの」と「場面を出るときのフラグ」を計算する
   const runs = useMemo(
@@ -49,40 +51,43 @@ export function BranchStory({ story, debug = false }: { story: Story; debug?: bo
     [path, story]
   );
 
+  // 保存しておいた続きを復元する。
+  // サーバーで作るページは最初の場面の状態なので、表示されたあとにブラウザ側で差し替える
+  useEffect(() => {
+    if (!saveKey) return;
+    sweepExpired();
+    const picks = loadPicks(saveKey, story.start);
+    if (!picks?.length) return;
+    const restored = replay(story, picks);
+    // 台本が直されて途中までしか選び直せなかったら、記録もそこまでに縮める
+    if (restored.length - 1 !== picks.length) savePicks(saveKey, story.start, picksOf(restored));
+    if (restored.length > 1) setPath(restored);
+  }, [saveKey, story]);
+
   // 新しい場面が出たら、そこへ視線と読み上げの位置を移す
   useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      return;
-    }
+    if (!moved.current) return;
+    moved.current = false;
     const el = lastRef.current;
     if (!el) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "nearest" });
     el.focus({ preventScroll: true });
-  }, [path.length]);
+  }, [path]);
 
-  const choose = (choice: BranchChoice, leaving: Vars) => {
-    setPath((prev) => {
-      if (prev.length >= MAX_STEPS) return prev;
-      const next = prev.slice(0, -1);
-      next.push({ ...prev[prev.length - 1], chosen: choice.label });
-      next.push({ scene: choice.target, enter: applyEffects(choice.effects, leaving) });
-      return next;
-    });
+  const go = (next: BranchStep[]) => {
+    if (next === path) return;
+    moved.current = true;
+    setPath(next);
+    if (saveKey) savePicks(saveKey, story.start, picksOf(next));
   };
 
-  const back = () => {
-    setPath((prev) => {
-      if (prev.length <= 1) return prev;
-      const next = prev.slice(0, -1);
-      const last = next[next.length - 1];
-      next[next.length - 1] = { scene: last.scene, enter: last.enter };
-      return next;
-    });
+  const choose = (choice: BranchChoice, leaving: Vars) => go(advance(path, choice, leaving));
+  const back = () => go(retreat(path));
+  const restart = () => {
+    if (saveKey) clearPicks(saveKey);
+    go(firstPath(story));
   };
-
-  const restart = () => setPath(first());
 
   return (
     <section className="branch" aria-label="選んで読み進める文章">
@@ -151,6 +156,7 @@ export function BranchStory({ story, debug = false }: { story: Story; debug?: bo
 
             {isLast && (isEnding || isStuck) && (
               <div className="branch-end">
+                {/* 画面には出さず、読み上げのときだけ結末だと伝える */}
                 {isEnding && <p className="sr-only">おわり</p>}
                 <div className="branch-end-actions">
                   <button type="button" onClick={restart}>
@@ -171,8 +177,13 @@ export function BranchStory({ story, debug = false }: { story: Story; debug?: bo
               </button>
             )}
 
-            {isLast && debug && story.flags.length > 0 && (
-              <FlagPanel scene={run.scene.id} flags={story.flags} vars={run.after} />
+            {isLast && debug && (story.flags.length > 0 || story.save) && (
+              <FlagPanel
+                scene={run.scene.id}
+                flags={story.flags}
+                vars={run.after}
+                save={story.save}
+              />
             )}
           </div>
         );
@@ -185,22 +196,39 @@ export function BranchStory({ story, debug = false }: { story: Story; debug?: bo
    下書きプレビューでだけ出す、フラグの状態
    -------------------------------------------------------------------------- */
 
-function FlagPanel({ scene, flags, vars }: { scene: string; flags: string[]; vars: Vars }) {
+function FlagPanel({
+  scene,
+  flags,
+  vars,
+  save,
+}: {
+  scene: string;
+  flags: string[];
+  vars: Vars;
+  save: boolean;
+}) {
   return (
     <details className="branch-debug" open>
-      <summary>フラグの状態（プレビューでだけ表示されます）</summary>
+      <summary>分岐の状態（プレビューでだけ表示されます）</summary>
       <p className="branch-debug-scene">いまの場面：{scene}</p>
-      <dl>
-        {flags.map((name) => {
-          const v = valueOf(vars, name);
-          return (
-            <div key={name} className={v !== 0 ? "is-on" : undefined}>
-              <dt>{name}</dt>
-              <dd>{v}</dd>
-            </div>
-          );
-        })}
-      </dl>
+      {save && (
+        <p className="branch-debug-scene">
+          途中保存：あり（公開ページで、最後に選んでから{SAVE_DAYS}日間。プレビューでは保存しません）
+        </p>
+      )}
+      {flags.length > 0 && (
+        <dl>
+          {flags.map((name) => {
+            const v = valueOf(vars, name);
+            return (
+              <div key={name} className={v !== 0 ? "is-on" : undefined}>
+                <dt>{name}</dt>
+                <dd>{v}</dd>
+              </div>
+            );
+          })}
+        </dl>
+      )}
     </details>
   );
 }
