@@ -5,6 +5,7 @@
      *斜体*              → 斜体
      [文字](URL)         → リンク（https:// か / で始まるURLだけ）
      {大:文字}           → 文字サイズ。極小・小・大・特大・超特大
+     {=所持金}           → フラグの今の値を表示（インタラクティブフィクション用）
      \*                  → 記号をそのまま出したいときは \ を前に付ける
 
    組み合わせもできる（**{大:強調して大きく}** など）。
@@ -22,7 +23,8 @@ export type InlineNode =
   | { t: "strong"; c: InlineNode[] }
   | { t: "em"; c: InlineNode[] }
   | { t: "link"; href: string; c: InlineNode[] }
-  | { t: "size"; size: InlineSize; c: InlineNode[] };
+  | { t: "size"; size: InlineSize; c: InlineNode[] }
+  | { t: "var"; name: string };
 
 /** {大:…} の「大」の部分。日本語でも英字でも書ける */
 const SIZE_WORDS: Record<string, InlineSize> = {
@@ -135,6 +137,18 @@ function parseRange(src: string, issues: string[]): InlineNode[] {
       }
     }
 
+    // {=フラグ名}
+    if (ch === "{" && (src[i + 1] === "=" || src[i + 1] === "＝")) {
+      const end = src.indexOf("}", i + 2);
+      const name = end > i ? src.slice(i + 2, end).trim() : "";
+      if (name && !/[\s{}\[\]]/.test(name)) {
+        pushText();
+        out.push({ t: "var", name });
+        i = end + 1;
+        continue;
+      }
+    }
+
     // {大:文字}
     if (ch === "{") {
       const m = src.slice(i).match(/^\{([^:：{}]{1,4})[:：]/);
@@ -222,6 +236,7 @@ function mergeText(nodes: InlineNode[]): InlineNode[] {
     const last = out[out.length - 1];
     if (n.t === "text" && last?.t === "text") last.v += n.v;
     else if (n.t === "text") out.push({ ...n });
+    else if (n.t === "var") out.push(n);
     else out.push({ ...n, c: mergeText(n.c) } as InlineNode);
   }
   return out;
@@ -229,5 +244,16 @@ function mergeText(nodes: InlineNode[]): InlineNode[] {
 
 /** 記号を取り除いた素の文字列（一覧の抜粋や、場面の記録に使う） */
 export function inlineToPlain(nodes: InlineNode[]): string {
-  return nodes.map((n) => (n.t === "text" ? n.v : inlineToPlain(n.c))).join("");
+  return nodes
+    .map((n) => (n.t === "text" ? n.v : n.t === "var" ? "" : inlineToPlain(n.c)))
+    .join("");
+}
+
+/** 文中で値を表示しているフラグの名前（書き間違いの確認用） */
+export function inlineVarNames(nodes: InlineNode[], out = new Set<string>()) {
+  for (const n of nodes) {
+    if (n.t === "var") out.add(n.name);
+    else if (n.t !== "text") inlineVarNames(n.c, out);
+  }
+  return out;
 }
