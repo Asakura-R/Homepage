@@ -12,7 +12,8 @@ import { BranchStory } from "./BranchStory";
  * 過去の記事は content だけなので、これまで通りに表示される。
  * 分岐を使う記事は blocks に「本文」と「分岐」を交互に積んでいく。
  *
- * showIssues が true のとき（下書きプレビュー）だけ、分岐の書き間違いを表示する。
+ * showIssues が true のとき（/preview で開いたとき）だけ、分岐の書き間違いと
+ * フラグの状態を表示する。
  */
 export function ArticleBody({
   article,
@@ -43,7 +44,7 @@ export function ArticleBody({
             <div key={i}>
               {showIssues && issues.length > 0 && (
                 <div className="branch-issues" role="note">
-                  <p>分岐の確認事項（下書きプレビューでだけ表示されます）</p>
+                  <p>分岐の確認事項（プレビューでだけ表示されます）</p>
                   <ul>
                     {story.errors.map((e) => (
                       <li key={e} className="is-error">{e}</li>
@@ -54,7 +55,7 @@ export function ArticleBody({
                   </ul>
                 </div>
               )}
-              {story.start && <BranchStory story={story} />}
+              {story.start && <BranchStory story={story} debug={showIssues} />}
             </div>
           );
         }
