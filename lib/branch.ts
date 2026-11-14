@@ -47,6 +47,11 @@ import type { Cond, Effect, Vars } from "./branchLogic";
    - 場面の中の行頭に [if 条件] を書くと、その行は条件に合うときだけ出る
    - 場面の中は上から順に処理する（変更より下の行は、変更後の値で判定・表示される）
 
+   ■ 途中保存
+   - 分岐の先頭（最初の場面より前）に [save] だけの行を書くと、その分岐は途中保存される
+   - 読者のブラウザに「どの選択肢を選んできたか」を記録し、次に開いたとき続きから表示する
+   - 最後に選んでから2週間たつと消える。仕組みは lib/branchSave.ts
+
    全角の「＃」「→」「：」「＞」でも書けるようにしてある。
    -------------------------------------------------------------------------- */
 
@@ -85,6 +90,8 @@ export type BranchStory = {
   scenes: Record<string, BranchScene>;
   /** 使われているフラグの名前（出てきた順）。下書きプレビューでフラグの状態を見せるのに使う */
   flags: string[];
+  /** [save] が書かれていれば true。読者のブラウザに途中経過を保存する */
+  save: boolean;
   /** 読者に見せると壊れる問題。下書きプレビューでだけ表示する */
   errors: string[];
   /** 動きはするが、たぶん意図と違うもの */
@@ -100,6 +107,9 @@ const HR_LINE = /^(?:-{3,}|\*{3,}|_{3,}|ー{3,}|―{2,})$/;
 const BULLET_LINE = /^[-*]\s+(.+)$/;
 const ORDERED_LINE = /^\d+[.．]\s+(.+)$/;
 const IMAGE_LINE = /^!\[([^\]]*)\]\(\s*(\S+?)(?:\s+["“”]([^"“”]*)["“”])?\s*\)$/;
+
+/** 途中保存の指定。1行に単独で書く */
+const SAVE_LINE = /^[\[［]\s*save\s*[\]］]$/i;
 
 /** 本文より前に書かれた文章を受ける、名前のない最初の場面 */
 const IMPLICIT_START = "はじまり";
@@ -119,7 +129,9 @@ export function parseBranch(source?: string): BranchStory {
   const seen = new Set<string>(); // 出てきた順に並べるため
   const referenced = new Map<string, number>(); // 名前 → 最初に出てきた行
 
-  const empty = { start: "", scenes, flags: [], errors, warnings };
+  let save = false;
+
+  const empty = { start: "", scenes, flags: [], save, errors, warnings };
   if (!source?.trim()) {
     errors.push("分岐の本文が空です");
     return empty;
@@ -195,6 +207,14 @@ export function parseBranch(source?: string): BranchStory {
     // 空行は段落の区切り
     if (!trimmed) {
       flush();
+      return;
+    }
+
+    if (SAVE_LINE.test(trimmed)) {
+      if (current) {
+        warnings.push(`${lineNo}行目：[save] は分岐の先頭（最初の場面より前）に書いてください。このままでも保存は有効です`);
+      }
+      save = true;
       return;
     }
 
@@ -274,6 +294,12 @@ export function parseBranch(source?: string): BranchStory {
     }
 
     const rest = head.rest;
+
+    // 「文 [if 鍵]」のように行末に書くと、読者にそのまま見えてしまう
+    if (rest && takeTrailingCommands(rest).commands.length) {
+      warnings.push(`${lineNo}行目：行末の [ … ] は選択肢の行でだけ使えます。場面の中では行頭に書いてください（いまは文字として表示されます）`);
+    }
+
     if (!rest) {
       if (cond.length && !effects.length) {
         warnings.push(`${lineNo}行目：[if …] のあとに何も書かれていません`);
@@ -400,7 +426,7 @@ export function parseBranch(source?: string): BranchStory {
     }
   }
 
-  return { start, scenes, flags: [...seen], errors, warnings };
+  return { start, scenes, flags: [...seen], save, errors, warnings };
 }
 
 /* --------------------------------------------------------------------------
@@ -452,6 +478,89 @@ export function choiceState(choice: BranchChoice, vars: Vars): ChoiceState {
   const failed = choice.locks.find((l) => !evalAll([l.cond], vars));
   if (failed) return { state: "locked", message: failed.message };
   return { state: "open" };
+}
+
+/* --------------------------------------------------------------------------
+   読者がたどった道筋
+
+   1歩ごとに「場面」「その場面に入ったときのフラグ」「そこで選んだもの」を持つ。
+   戻るときは最後の1歩を捨てるだけでよく、フラグも自動で選ぶ前に戻る。
+   -------------------------------------------------------------------------- */
+
+/** 同じ場面を行き来する構成でも、際限なく伸びないようにする */
+export const MAX_STEPS = 60;
+
+export type BranchStep = {
+  scene: string;
+  /** この場面に入ったときのフラグ */
+  enter: Vars;
+  /** この場面で選んだ選択肢の表示文（通り過ぎた場面にだけある） */
+  chosen?: string;
+};
+
+/** 途中保存に記録する、選んだ選択肢の目印 */
+export type BranchPick = { label: string; target: string };
+
+export function firstPath(story: BranchStory): BranchStep[] {
+  return [{ scene: story.start, enter: {} }];
+}
+
+/** 選択肢を選んだあとの道筋 */
+export function advance(path: BranchStep[], choice: BranchChoice, leaving: Vars): BranchStep[] {
+  if (path.length >= MAX_STEPS) return path;
+  const next = path.slice(0, -1);
+  next.push({ ...path[path.length - 1], chosen: choice.label });
+  next.push({ scene: choice.target, enter: applyEffects(choice.effects, leaving) });
+  return next;
+}
+
+/** ひとつ前に戻ったあとの道筋 */
+export function retreat(path: BranchStep[]): BranchStep[] {
+  if (path.length <= 1) return path;
+  const next = path.slice(0, -1);
+  const last = next[next.length - 1];
+  next[next.length - 1] = { scene: last.scene, enter: last.enter };
+  return next;
+}
+
+/** 道筋から、選んだ選択肢の目印だけを取り出す（保存用） */
+export function picksOf(path: BranchStep[]): BranchPick[] {
+  const picks: BranchPick[] = [];
+  for (let i = 0; i < path.length - 1; i++) {
+    const label = path[i].chosen;
+    if (label === undefined) break;
+    picks.push({ label, target: path[i + 1].scene });
+  }
+  return picks;
+}
+
+/**
+ * 保存しておいた目印を、いまの台本で最初から選び直して道筋を組み立てる。
+ *
+ * フラグの値は保存せず、毎回ここで計算し直す。公開後に台本を直しても
+ * （[所持金 -1000] を -500 にした、など）新しい内容で正しく計算される。
+ * 目印に合う選択肢が見つからない（消した・行き先を変えた・条件で押せない）ときは、
+ * そこで止める。読者はその場面からもう一度選ぶことになる。
+ */
+export function replay(story: BranchStory, picks: BranchPick[]): BranchStep[] {
+  let path = firstPath(story);
+  for (const pick of picks) {
+    if (path.length >= MAX_STEPS) break;
+    const step = path[path.length - 1];
+    const scene = story.scenes[step.scene];
+    if (!scene) break;
+    const { after } = runScene(scene, step.enter);
+    const choice = scene.choices.find(
+      (c) =>
+        c.label === pick.label &&
+        c.target === pick.target &&
+        story.scenes[c.target] !== undefined &&
+        choiceState(c, after).state === "open"
+    );
+    if (!choice) break;
+    path = advance(path, choice, after);
+  }
+  return path;
 }
 
 /* --------------------------------------------------------------------------

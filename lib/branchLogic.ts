@@ -146,6 +146,9 @@ export function parseCommand(rawInside: string): Command | { error: string } | n
   const assign = s.match(new RegExp(`^(${NAME})\\s*=\\s*(-?\\d+)$`));
   if (assign) return { type: "effect", effect: { kind: "assign", name: assign[1], value: Number(assign[2]) } };
 
+  // [save] は分岐全体の指定なので、文や選択肢と同じ行には書けない
+  if (/^save$/i.test(s)) return { error: "[save] は1行に単独で書いてください" };
+
   // if / lock / set / unset で始まるのに読めないものは、書き間違いとして知らせる
   if (KEYWORD.test(s)) return { error: `「[${rawInside.trim()}]」を読み取れません` };
 
