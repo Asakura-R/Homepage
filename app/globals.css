@@ -498,13 +498,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   margin: 2.4em 0;
 }
 
-.branch-label {
-  margin: 0 0 1.3em !important;
-  font-size: 10.5px;
-  letter-spacing: 0.22em;
-  color: var(--muted);
-}
-
 /* 選んだ直後の場面は、すっと浮かび上がるように出す */
 .branch-scene:last-child { animation: branch-in 0.35s ease-out; }
 .branch-scene:focus { outline: none; }
@@ -561,8 +554,25 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: color 0.15s;
 }
 
-.branch-choices button:hover { border-color: var(--accent); color: var(--accent); }
-.branch-choices button:hover::before { color: var(--accent); }
+.branch-choices button:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
+.branch-choices button:not(:disabled):hover::before { color: var(--accent); }
+
+/* 条件に合わず押せない選択肢。存在は見せるが、押せないことがひと目でわかるように */
+.branch-choices button.is-locked {
+  color: var(--muted);
+  background: transparent;
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.branch-choices button.is-locked::before { content: "×"; }
+
+.branch-lock-reason {
+  display: block;
+  margin: 2px 0 0 1.6em;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
 
 .branch-back {
   margin-top: 14px;
@@ -616,6 +626,32 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .prose .branch-issues p { margin: 0 0 6px; font-weight: 500; color: #A82420; }
 .prose .branch-issues ul { margin: 0; }
 .branch-issues .is-error { color: #A82420; }
+
+/* 下書きプレビューでだけ出る、フラグの状態 */
+.branch-debug {
+  margin: 1.6em 0 0;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--sub);
+  background: var(--surface);
+  border: 0.5px dashed var(--rule-strong);
+}
+
+.branch-debug summary { cursor: pointer; color: var(--muted); }
+.prose .branch-debug-scene { margin: 8px 0 6px; font-size: 12.5px; }
+
+.branch-debug dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.branch-debug dl > div { display: flex; justify-content: space-between; gap: 8px; }
+.branch-debug dt { overflow-wrap: anywhere; }
+.branch-debug dd { margin: 0; font-variant-numeric: tabular-nums; color: var(--muted); }
+.branch-debug .is-on dd { color: var(--accent); font-weight: 500; }
 
 @media (max-width: 820px) {
   .branch-choices button { font-size: 15px; padding: 10px 14px; }
