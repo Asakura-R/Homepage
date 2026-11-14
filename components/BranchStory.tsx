@@ -151,7 +151,7 @@ export function BranchStory({ story, debug = false }: { story: Story; debug?: bo
 
             {isLast && (isEnding || isStuck) && (
               <div className="branch-end">
-                {isEnding && <p className="branch-end-mark">おわり</p>}
+                {isEnding && <p className="sr-only">おわり</p>}
                 <div className="branch-end-actions">
                   <button type="button" onClick={restart}>
                     最初から読む
